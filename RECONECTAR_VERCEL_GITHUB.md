@@ -271,3 +271,5 @@ Esto hace deploy directo desde tu máquina, sin necesidad de GitHub.
 
 **Empieza con la Opción 1 (Desconectar y Reconectar). Es la solución más común y rápida.** ✅
 
+
+

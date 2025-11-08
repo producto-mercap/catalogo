@@ -23,14 +23,23 @@
                         Nueva Funcionalidad
                     </button>
                     
-                    <select class="btn" onchange="filtrarPorSeccion(this.value)">
-                        <option value="">Todas las secciones</option>
-                        <% secciones.forEach(seccion => { %>
-                            <option value="<%= seccion %>" <%= filtros.seccion === seccion ? 'selected' : '' %>>
-                                <%= seccion %>
-                            </option>
-                        <% }) %>
-                    </select>
+                    <div style="position: relative;">
+                        <button class="filter-btn" onclick="toggleFilterDropdown()" title="Filtrar por sección">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                            </svg>
+                        </button>
+                        <div class="filter-dropdown" id="filterDropdown">
+                            <div class="filter-option <%= !filtros.seccion ? 'selected' : '' %>" onclick="filtrarPorSeccion('')">
+                                Todas las secciones
+                            </div>
+                            <% secciones.forEach(seccion => { %>
+                                <div class="filter-option <%= filtros.seccion === seccion ? 'selected' : '' %>" onclick="filtrarPorSeccion('<%= seccion %>')">
+                                    <%= seccion %>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="toolbar-right">
@@ -68,12 +77,47 @@
                     <!-- Vista de Lista -->
                     <div class="list-view">
                         <div class="list-header">
-                            <div onclick="ordenar('titulo')" style="cursor: pointer;">Título</div>
-                            <div onclick="ordenar('seccion')" style="cursor: pointer;">Sección</div>
-                            <div onclick="ordenar('sponsor')" style="cursor: pointer;">Sponsor</div>
-                            <div onclick="ordenar('monto')" style="cursor: pointer;" class="desktop-only">Monto</div>
-                            <div onclick="ordenar('productivo_en')" style="cursor: pointer;" class="desktop-only">Productivo en</div>
-                            <div onclick="ordenar('score_total')" style="cursor: pointer;">Score</div>
+                            <div onclick="ordenar('titulo')" style="cursor: pointer;" data-sort="titulo">
+                                Título
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </div>
+                            <div onclick="ordenar('seccion')" style="cursor: pointer;" data-sort="seccion">
+                                Sección
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </div>
+                            <div onclick="ordenar('sponsor')" style="cursor: pointer;" data-sort="sponsor">
+                                Sponsor
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </div>
+                            <div onclick="ordenar('monto')" style="cursor: pointer;" class="desktop-only" id="montoHeader" data-sort="monto">
+                                Monto
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                                <button class="icon-button toggle-monto-btn" onclick="event.stopPropagation(); toggleMontos()" title="Ocultar/Mostrar montos" style="margin-left: 8px;">
+                                    <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div onclick="ordenar('productivo_en')" style="cursor: pointer;" class="desktop-only" data-sort="productivo_en">
+                                Productivo en
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </div>
+                            <div onclick="ordenar('score_total')" style="cursor: pointer;" data-sort="score_total">
+                                Score
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </div>
                         </div>
                         
                         <% funcionalidades.forEach(func => { %>

@@ -211,3 +211,5 @@ DATABASE_URL
 
 **¡Haz commit, push, y espera 1-2 minutos! Tu app debería funcionar perfectamente en Vercel. 🚀**
 
+
+

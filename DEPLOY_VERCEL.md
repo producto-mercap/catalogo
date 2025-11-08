@@ -328,3 +328,5 @@ Si después de todo esto sigue sin funcionar:
 
 **¡Tu aplicación ahora debería funcionar perfectamente en Vercel! 🎉**
 
+
+

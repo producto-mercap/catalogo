@@ -1,7 +1,14 @@
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <div class="sidebar-logo">📊</div>
+        <div class="sidebar-logo">
+            <img src="/images/logo.png" alt="Logo" />
+        </div>
         <h1 class="sidebar-title">Catálogo</h1>
+        <button class="sidebar-toggle" onclick="toggleSidebar()" title="Contraer/Expandir">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+            </svg>
+        </button>
     </div>
     
     <nav class="sidebar-nav">

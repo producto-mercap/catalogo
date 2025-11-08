@@ -236,3 +236,5 @@ Cuando cambias código de las vistas (EJS), a veces el caché impide que se actu
 
 **Intenta primero la Opción 1 (Redeploy desde Dashboard). Es la más fácil y efectiva.** ✅
 
+
+

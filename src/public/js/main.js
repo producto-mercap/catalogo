@@ -2,6 +2,44 @@
 
 console.log('✅ Aplicación Catálogo cargada');
 
+// Toggle sidebar
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('collapsed');
+        // Guardar el estado en localStorage
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
+    }
+}
+
+// Restaurar estado del sidebar al cargar
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('sidebar');
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (sidebar && isCollapsed) {
+        sidebar.classList.add('collapsed');
+    }
+});
+
+// Toggle filter dropdown
+function toggleFilterDropdown() {
+    const dropdown = document.getElementById('filterDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
+    
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', function closeDropdown(e) {
+        if (!e.target.closest('.filter-btn') && !e.target.closest('.filter-dropdown')) {
+            if (dropdown) {
+                dropdown.classList.remove('active');
+            }
+            document.removeEventListener('click', closeDropdown);
+        }
+    });
+}
+
 // Cambiar vista (lista/tarjetas)
 function cambiarVista(vista) {
     const params = new URLSearchParams(window.location.search);
@@ -23,7 +61,16 @@ function buscar(event) {
 // Filtrar por sección
 function filtrarPorSeccion(seccion) {
     const params = new URLSearchParams(window.location.search);
-    params.set('seccion', seccion);
+    if (seccion) {
+        params.set('seccion', seccion);
+    } else {
+        params.delete('seccion');
+    }
+    // Cerrar dropdown
+    const dropdown = document.getElementById('filterDropdown');
+    if (dropdown) {
+        dropdown.classList.remove('active');
+    }
     window.location.search = params.toString();
 }
 
@@ -42,6 +89,40 @@ function ordenar(campo) {
     }
     
     window.location.search = params.toString();
+}
+
+// Actualizar UI de ordenamiento
+function actualizarOrdenamiento() {
+    const params = new URLSearchParams(window.location.search);
+    const ordenActual = params.get('orden');
+    const direccionActual = params.get('direccion');
+    
+    // Remover clases sorted de todos los headers
+    document.querySelectorAll('.list-header > div').forEach(header => {
+        header.classList.remove('sorted');
+        const sortIcon = header.querySelector('.sort-icon');
+        if (sortIcon) {
+            sortIcon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
+        }
+    });
+    
+    // Agregar clase sorted al header actual
+    if (ordenActual) {
+        const headerActual = document.querySelector(`[data-sort="${ordenActual}"]`);
+        if (headerActual) {
+            headerActual.classList.add('sorted');
+            const sortIcon = headerActual.querySelector('.sort-icon');
+            if (sortIcon) {
+                if (direccionActual === 'asc') {
+                    // Flecha hacia arriba
+                    sortIcon.innerHTML = '<path d="M7 14l5-5 5 5z"/>';
+                } else {
+                    // Flecha hacia abajo
+                    sortIcon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
+                }
+            }
+        }
+    }
 }
 
 // Ver detalle de funcionalidad
@@ -238,7 +319,8 @@ class MapaClientes {
 }
 
 // Toggle mostrar/ocultar montos
-let montosOcultos = false;
+// Por defecto, los montos están ocultos
+let montosOcultos = true;
 
 function toggleMontos() {
     console.log('toggleMontos llamado'); // Debug
@@ -273,9 +355,13 @@ function toggleMontos() {
         }
     }
     
-    // Cambiar opacidad del botón para indicar estado
+    // Cambiar opacidad del botón y mantenerlo visible si los montos están ocultos
     if (eyeBtn) {
         eyeBtn.style.opacity = montosOcultos ? '1' : '0.6';
+        // Si los montos están ocultos, mantener el botón visible
+        if (montosOcultos) {
+            eyeBtn.style.display = 'inline-flex';
+        }
     }
     
     console.log('Montos ocultos:', montosOcultos); // Debug
@@ -342,6 +428,16 @@ function mostrarSugerencias(query) {
 
 // Inicializar en DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Restaurar estado del sidebar
+    const sidebar = document.getElementById('sidebar');
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (sidebar && isCollapsed) {
+        sidebar.classList.add('collapsed');
+    }
+    
+    // Actualizar UI de ordenamiento
+    actualizarOrdenamiento();
+    
     // Cargar funcionalidades para sugerencias
     cargarFuncionalidades();
     
@@ -376,6 +472,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+    }
+    
+    // Ocultar montos por defecto al cargar la página
+    const montos = document.querySelectorAll('.monto-valor');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const eyeBtn = document.querySelector('.toggle-monto-btn');
+    
+    if (montos.length > 0 && montosOcultos) {
+        montos.forEach((monto) => {
+            monto.style.filter = 'blur(5px)';
+            monto.style.userSelect = 'none';
+            monto.style.pointerEvents = 'none';
+        });
+        
+        // Cambiar ícono a "ojo cerrado" por defecto
+        if (eyeIcon) {
+            eyeIcon.innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>';
+        }
+        
+        if (eyeBtn) {
+            eyeBtn.style.opacity = '1';
+        }
     }
 });
 

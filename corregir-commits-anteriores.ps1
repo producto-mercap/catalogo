@@ -38,3 +38,5 @@ continue
 Write-Host "`nConfiguración actual:" -ForegroundColor Cyan
 git config --local --list | Select-String "user\."
 
+
+
