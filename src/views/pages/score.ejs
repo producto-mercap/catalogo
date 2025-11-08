@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <%- include('../partials/sidebar', { activeMenu: 'score' }) %>
+        
+        <div class="main-content">
+            <%- include('../partials/header') %>
+            
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <h2 style="font-size: 20px; font-weight: 500; margin: 0;">Ranking de Funcionalidades</h2>
+                </div>
+                <div class="toolbar-right">
+                    <span class="text-muted text-small">
+                        <%= ranking.length %> funcionalidades evaluadas
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Contenido -->
+            <div class="content-area">
+                <% if (ranking.length === 0) { %>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⭐</div>
+                        <div class="empty-state-text">No hay funcionalidades evaluadas</div>
+                        <div class="empty-state-subtext">Comienza evaluando funcionalidades desde el módulo principal</div>
+                    </div>
+                <% } else { %>
+                    <!-- Estadísticas Globales -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                        <div class="card" style="cursor: default;">
+                            <div class="text-muted text-small">Score Promedio</div>
+                            <div style="font-size: 32px; font-weight: 600; color: var(--primary-color); margin-top: 8px;">
+                                <%= estadisticas.promedio ? parseFloat(estadisticas.promedio).toFixed(2) : '0.00' %>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="cursor: default;">
+                            <div class="text-muted text-small">Score Máximo</div>
+                            <div style="font-size: 32px; font-weight: 600; color: #1e8e3e; margin-top: 8px;">
+                                <%= estadisticas.maximo ? parseFloat(estadisticas.maximo).toFixed(2) : '0.00' %>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="cursor: default;">
+                            <div class="text-muted text-small">Score Mínimo</div>
+                            <div style="font-size: 32px; font-weight: 600; color: #d93025; margin-top: 8px;">
+                                <%= estadisticas.minimo ? parseFloat(estadisticas.minimo).toFixed(2) : '0.00' %>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ranking -->
+                    <div class="list-view">
+                        <div class="list-header">
+                            <div style="width: 50px;">Pos</div>
+                            <div>Funcionalidad</div>
+                            <div>Sección</div>
+                            <div style="width: 100px; text-align: center;">Score</div>
+                            <div style="width: 100px; text-align: center;">Acciones</div>
+                        </div>
+                        
+                        <% ranking.forEach((func, index) => { 
+                            const score = func.score_calculado || 0;
+                            let scoreClass = 'score-low';
+                            if (score >= 4) scoreClass = 'score-high';
+                            else if (score >= 2.5) scoreClass = 'score-medium';
+                            
+                            let medalIcon = '';
+                            if (index === 0) medalIcon = '🥇';
+                            else if (index === 1) medalIcon = '🥈';
+                            else if (index === 2) medalIcon = '🥉';
+                        %>
+                            <div class="list-item" style="grid-template-columns: 50px 2fr 1fr 100px 100px;">
+                                <div style="font-size: 18px; font-weight: 600; text-align: center;">
+                                    <%= medalIcon || (index + 1) %>
+                                </div>
+                                <div class="item-title">
+                                    <div class="item-icon">
+                                        <%= func.titulo.substring(0, 1).toUpperCase() %>
+                                    </div>
+                                    <%= func.titulo %>
+                                </div>
+                                <div class="item-text"><%= func.seccion || '-' %></div>
+                                <div style="text-align: center;">
+                                    <span class="score-badge <%= scoreClass %>">
+                                        <%= score.toFixed(2) %>
+                                    </span>
+                                </div>
+                                <div style="text-align: center;">
+                                    <button 
+                                        class="btn" 
+                                        style="padding: 6px 12px; font-size: 13px;"
+                                        onclick="window.location.href='/score/calculadora/<%= func.id %>'"
+                                    >
+                                        Evaluar
+                                    </button>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                    
+                    <!-- Criterios Promedios -->
+                    <div class="card" style="margin-top: 24px; cursor: default;">
+                        <h3 style="margin-bottom: 16px;">Promedio de Criterios</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                            <div>
+                                <div class="text-muted text-small">Origen</div>
+                                <div style="font-size: 20px; font-weight: 600; margin-top: 4px;">
+                                    <%= estadisticas.promedio_origen ? parseFloat(estadisticas.promedio_origen).toFixed(1) : '0.0' %>/5
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-muted text-small">Facturación</div>
+                                <div style="font-size: 20px; font-weight: 600; margin-top: 4px;">
+                                    <%= estadisticas.promedio_facturacion ? parseFloat(estadisticas.promedio_facturacion).toFixed(1) : '0.0' %>/5
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-muted text-small">Urgencia</div>
+                                <div style="font-size: 20px; font-weight: 600; margin-top: 4px;">
+                                    <%= estadisticas.promedio_urgencia ? parseFloat(estadisticas.promedio_urgencia).toFixed(1) : '0.0' %>/5
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-muted text-small">Impacto Cliente</div>
+                                <div style="font-size: 20px; font-weight: 600; margin-top: 4px;">
+                                    <%= estadisticas.promedio_impacto_cliente ? parseFloat(estadisticas.promedio_impacto_cliente).toFixed(1) : '0.0' %>/5
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html>
+

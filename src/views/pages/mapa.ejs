@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <%- include('../partials/sidebar', { activeMenu: 'mapa' }) %>
+        
+        <div class="main-content">
+            <%- include('../partials/header') %>
+            
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <h2 style="font-size: 20px; font-weight: 500; margin: 0;">Mapa de Clientes y Funcionalidades</h2>
+                </div>
+                <div class="toolbar-right">
+                    <span class="text-muted text-small">
+                        <%= clientes.length %> clientes × <%= funcionalidades.length %> funcionalidades
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Contenido -->
+            <div class="content-area">
+                <!-- Estadísticas -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="card" style="cursor: default;">
+                        <div class="text-muted text-small">Total Relaciones</div>
+                        <div style="font-size: 32px; font-weight: 600; color: var(--primary-color); margin-top: 8px;">
+                            <%= estadisticas.total %>
+                        </div>
+                    </div>
+                    
+                    <% estadisticas.por_estado.forEach(estado => { 
+                        let color = '#5f6368';
+                        if (estado.estado_comercial === 'Implementado') color = '#1e8e3e';
+                        else if (estado.estado_comercial === 'En Desarrollo') color = '#1a73e8';
+                        else if (estado.estado_comercial === 'Planificado') color = '#f9ab00';
+                    %>
+                        <div class="card" style="cursor: default;">
+                            <div class="text-muted text-small"><%= estado.estado_comercial %></div>
+                            <div style="font-size: 32px; font-weight: 600; color: <%= color %>; margin-top: 8px;">
+                                <%= estado.cantidad %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+                
+                <!-- Mapa Grid -->
+                <div class="mapa-grid">
+                    <table class="mapa-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 200px;">Funcionalidad / Cliente</th>
+                                <% clientes.forEach(cliente => { %>
+                                    <th style="min-width: 150px;"><%= cliente.nombre %></th>
+                                <% }) %>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% funcionalidades.forEach(func => { %>
+                                <tr>
+                                    <td style="font-weight: 500;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div class="item-icon" style="flex-shrink: 0;">
+                                                <%= func.titulo.substring(0, 1).toUpperCase() %>
+                                            </div>
+                                            <div>
+                                                <%= func.titulo %>
+                                                <% if (func.score_calculado) { %>
+                                                    <% 
+                                                    let scoreClass = 'score-low';
+                                                    if (func.score_calculado >= 4) scoreClass = 'score-high';
+                                                    else if (func.score_calculado >= 2.5) scoreClass = 'score-medium';
+                                                    %>
+                                                    <span class="score-badge <%= scoreClass %>" style="margin-left: 8px; font-size: 11px;">
+                                                        <%= func.score_calculado.toFixed(1) %>
+                                                    </span>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <% clientes.forEach(cliente => { 
+                                        const key = `${cliente.id}-${func.id}`;
+                                        const relacion = relaciones[key];
+                                        let estado = relacion ? relacion.estado : null;
+                                        let claseEstado = '';
+                                        let textoEstado = '-';
+                                        
+                                        if (estado) {
+                                            textoEstado = estado;
+                                            if (estado === 'Implementado') claseEstado = 'estado-implementado';
+                                            else if (estado === 'En Desarrollo') claseEstado = 'estado-desarrollo';
+                                            else if (estado === 'Planificado') claseEstado = 'estado-planificado';
+                                            else if (estado === 'Cancelado') claseEstado = 'estado-cancelado';
+                                        }
+                                    %>
+                                        <td class="mapa-cell">
+                                            <% if (estado) { %>
+                                                <span 
+                                                    class="mapa-cell-content <%= claseEstado %>"
+                                                    onclick="if (window.mapa) mapa.mostrarModalEstado(<%= cliente.id %>, <%= func.id %>, '<%= estado %>')"
+                                                    data-cliente="<%= cliente.id %>"
+                                                    data-funcionalidad="<%= func.id %>"
+                                                >
+                                                    <%= textoEstado %>
+                                                </span>
+                                            <% } else { %>
+                                                <button 
+                                                    class="btn" 
+                                                    style="padding: 4px 8px; font-size: 12px;"
+                                                    onclick="if (window.mapa) mapa.mostrarModalEstado(<%= cliente.id %>, <%= func.id %>, null)"
+                                                >
+                                                    +
+                                                </button>
+                                            <% } %>
+                                        </td>
+                                    <% }) %>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Leyenda -->
+                <div class="card" style="margin-top: 24px; cursor: default;">
+                    <h4 style="margin-bottom: 12px; font-size: 14px; font-weight: 600;">Estados Comerciales</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="estado-badge estado-implementado">Implementado</span>
+                            <span class="text-muted text-small">Funcionalidad activa en producción</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="estado-badge estado-desarrollo">En Desarrollo</span>
+                            <span class="text-muted text-small">Actualmente en desarrollo</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="estado-badge estado-planificado">Planificado</span>
+                            <span class="text-muted text-small">Planificado para el futuro</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="estado-badge estado-cancelado">Cancelado</span>
+                            <span class="text-muted text-small">Proyecto cancelado</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Top Funcionalidades -->
+                <% if (topFuncionalidades && topFuncionalidades.length > 0) { %>
+                    <div class="card" style="margin-top: 24px; cursor: default;">
+                        <h4 style="margin-bottom: 16px; font-size: 14px; font-weight: 600;">Funcionalidades Más Implementadas</h4>
+                        <div class="list-view" style="box-shadow: none;">
+                            <% topFuncionalidades.forEach((func, index) => { %>
+                                <div class="list-item" style="grid-template-columns: 40px 2fr 1fr 1fr; cursor: default;" onclick="event.stopPropagation()">
+                                    <div style="font-weight: 600; color: var(--primary-color); text-align: center;">
+                                        <%= index + 1 %>
+                                    </div>
+                                    <div class="item-title">
+                                        <div class="item-icon">
+                                            <%= func.titulo.substring(0, 1).toUpperCase() %>
+                                        </div>
+                                        <%= func.titulo %>
+                                    </div>
+                                    <div class="item-text"><%= func.seccion || '-' %></div>
+                                    <div>
+                                        <span class="item-badge">
+                                            <%= func.total_clientes %> cliente<%= func.total_clientes !== 1 ? 's' : '' %>
+                                        </span>
+                                        <span class="text-muted text-small" style="margin-left: 8px;">
+                                            (<%= func.implementados %> implementado<%= func.implementados !== 1 ? 's' : '' %>)
+                                        </span>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html>
+

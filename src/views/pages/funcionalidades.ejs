@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <%- include('../partials/sidebar', { activeMenu: 'funcionalidades' }) %>
+        
+        <div class="main-content">
+            <%- include('../partials/header') %>
+            
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button class="btn btn-primary" onclick="window.location.href='/funcionalidades/nuevo'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Nueva Funcionalidad
+                    </button>
+                    
+                    <select class="btn" onchange="filtrarPorSeccion(this.value)">
+                        <option value="">Todas las secciones</option>
+                        <% secciones.forEach(seccion => { %>
+                            <option value="<%= seccion %>" <%= filtros.seccion === seccion ? 'selected' : '' %>>
+                                <%= seccion %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+                
+                <div class="toolbar-right">
+                    <div class="view-toggle">
+                        <button class="view-btn <%= vista === 'lista' ? 'active' : '' %>" onclick="cambiarVista('lista')" title="Vista de lista">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/>
+                            </svg>
+                        </button>
+                        <button class="view-btn <%= vista === 'tarjetas' ? 'active' : '' %>" onclick="cambiarVista('tarjetas')" title="Vista de tarjetas">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M4 11h5V5H4v6zm0 7h5v-6H4v6zm6 0h5v-6h-5v6zm6 0h5v-6h-5v6zm-6-7h5V5h-5v6zm6-6v6h5V5h-5z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <span class="text-muted text-small">
+                        <%= funcionalidades.length %> funcionalidades
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Contenido -->
+            <div class="content-area">
+                <% if (funcionalidades.length === 0) { %>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">No se encontraron funcionalidades</div>
+                        <div class="empty-state-subtext">Comienza creando una nueva funcionalidad</div>
+                        <button class="btn btn-primary mt-4" onclick="window.location.href='/funcionalidades/nuevo'">
+                            Nueva Funcionalidad
+                        </button>
+                    </div>
+                <% } else if (vista === 'lista') { %>
+                    <!-- Vista de Lista -->
+                    <div class="list-view">
+                        <div class="list-header">
+                            <div onclick="ordenar('titulo')" style="cursor: pointer;">Título</div>
+                            <div onclick="ordenar('seccion')" style="cursor: pointer;">Sección</div>
+                            <div onclick="ordenar('sponsor')" style="cursor: pointer;">Sponsor</div>
+                            <div onclick="ordenar('monto')" style="cursor: pointer;" class="desktop-only">Monto</div>
+                            <div onclick="ordenar('productivo_en')" style="cursor: pointer;" class="desktop-only">Productivo en</div>
+                            <div onclick="ordenar('score_total')" style="cursor: pointer;">Score</div>
+                        </div>
+                        
+                        <% funcionalidades.forEach(func => { %>
+                            <div class="list-item" onclick="verDetalle(<%= func.id %>)">
+                                <div class="item-title">
+                                    <div class="item-icon">
+                                        <%= func.titulo.substring(0, 1).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <div><%= func.titulo %></div>
+                                        <% if (func.descripcion) { %>
+                                            <div class="text-small text-muted text-truncate" style="max-width: 400px;">
+                                                <%= func.descripcion %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <div class="item-text"><%= func.seccion || '-' %></div>
+                                <div class="item-text"><%= func.sponsor || '-' %></div>
+                                <div class="item-text desktop-only">
+                                    <% if (func.monto) { %>
+                                        $<%= new Intl.NumberFormat('es-AR').format(func.monto) %>
+                                    <% } else { %>
+                                        -
+                                    <% } %>
+                                </div>
+                                <div class="item-text desktop-only">
+                                    <%= func.productivo_en ? new Date(func.productivo_en).toLocaleDateString('es-AR') : '-' %>
+                                </div>
+                                <div>
+                                    <% 
+                                    const score = func.score_total || func.score_calculado || 0;
+                                    let scoreClass = 'score-low';
+                                    if (score >= 4) scoreClass = 'score-high';
+                                    else if (score >= 2.5) scoreClass = 'score-medium';
+                                    %>
+                                    <span class="score-badge <%= scoreClass %>">
+                                        <%= score.toFixed(1) %>
+                                    </span>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <!-- Vista de Tarjetas -->
+                    <div class="cards-view">
+                        <% funcionalidades.forEach(func => { %>
+                            <div class="card" onclick="verDetalle(<%= func.id %>)">
+                                <div class="card-header">
+                                    <h3 class="card-title"><%= func.titulo %></h3>
+                                    <button class="card-menu" onclick="event.stopPropagation(); eliminarFuncionalidad(<%= func.id %>)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                                <% if (func.descripcion) { %>
+                                    <p class="card-description"><%= func.descripcion %></p>
+                                <% } %>
+                                
+                                <div class="card-meta">
+                                    <% if (func.seccion) { %>
+                                        <span class="card-tag">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                                            </svg>
+                                            <%= func.seccion %>
+                                        </span>
+                                    <% } %>
+                                    
+                                    <% if (func.sponsor) { %>
+                                        <span class="card-tag">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                            </svg>
+                                            <%= func.sponsor %>
+                                        </span>
+                                    <% } %>
+                                    
+                                    <% 
+                                    const score = func.score_total || func.score_calculado || 0;
+                                    let scoreClass = 'score-low';
+                                    if (score >= 4) scoreClass = 'score-high';
+                                    else if (score >= 2.5) scoreClass = 'score-medium';
+                                    %>
+                                    <span class="score-badge <%= scoreClass %>">
+                                        ⭐ <%= score.toFixed(1) %>
+                                    </span>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/js/main.js"></script>
+</body>
+</html>
+

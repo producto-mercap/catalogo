@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <%- include('../partials/sidebar', { activeMenu: 'score' }) %>
+        
+        <div class="main-content">
+            <%- include('../partials/header') %>
+            
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button class="btn" onclick="window.history.back()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                        </svg>
+                        Volver
+                    </button>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn btn-primary" onclick="guardarScore()">Guardar Score</button>
+                </div>
+            </div>
+            
+            <!-- Contenido -->
+            <div class="content-area">
+                <div class="score-calculator">
+                    <div style="text-align: center; margin-bottom: 32px;">
+                        <h2 style="font-size: 24px; font-weight: 500; margin-bottom: 8px;">
+                            <%= funcionalidad.titulo %>
+                        </h2>
+                        <% if (funcionalidad.descripcion) { %>
+                            <p style="color: var(--text-secondary); font-size: 14px;">
+                                <%= funcionalidad.descripcion %>
+                            </p>
+                        <% } %>
+                    </div>
+                    
+                    <!-- Criterios -->
+                    <div style="margin-bottom: 32px;">
+                        <% 
+                        const criterios = [
+                            { key: 'origen', label: 'Origen', peso: score ? score.peso_origen : 40 },
+                            { key: 'facturacion', label: 'Facturación', peso: score ? score.peso_facturacion : 20 },
+                            { key: 'urgencia', label: 'Urgencia', peso: score ? score.peso_urgencia : 20 },
+                            { key: 'facturacion_potencial', label: 'Facturación Potencial', peso: score ? score.peso_facturacion_potencial : 20 },
+                            { key: 'impacto_cliente', label: 'Impacto en Cliente', peso: score ? score.peso_impacto_cliente : 33.33 },
+                            { key: 'esfuerzo', label: 'Esfuerzo', peso: score ? score.peso_esfuerzo : 33.33 },
+                            { key: 'incertidumbre', label: 'Incertidumbre', peso: score ? score.peso_incertidumbre : 33.33 },
+                            { key: 'riesgo', label: 'Riesgo', peso: score ? score.peso_riesgo : 33.33 }
+                        ];
+                        %>
+                        
+                        <% criterios.forEach(criterio => { 
+                            const valor = score ? (score[criterio.key] || 0) : 0;
+                        %>
+                            <div class="criterio-row">
+                                <div>
+                                    <div class="criterio-label"><%= criterio.label %></div>
+                                    <div class="criterio-peso">Peso: <%= criterio.peso %>%</div>
+                                </div>
+                                <div>
+                                    <input 
+                                        type="range" 
+                                        class="criterio-slider" 
+                                        data-criterio="<%= criterio.key %>"
+                                        min="0" 
+                                        max="5" 
+                                        value="<%= valor %>"
+                                        step="1"
+                                    >
+                                </div>
+                                <div class="criterio-value" data-value="<%= criterio.key %>">
+                                    <%= valor %>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                    
+                    <!-- Resultado -->
+                    <div class="score-result">
+                        <div class="score-result-label">Score Total</div>
+                        <div class="score-result-value" id="scoreTotal">
+                            <%= score && score.score_calculado ? score.score_calculado.toFixed(2) : '0.00' %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/js/main.js"></script>
+    <script>
+        // Inicializar valores actuales
+        const funcionalidadId = <%= funcionalidad.id %>;
+        
+        // Cargar valores actuales al inicializar
+        if (window.scoreCalculator) {
+            <% if (score) { %>
+                scoreCalculator.criterios = {
+                    origen: <%= score.origen || 0 %>,
+                    facturacion: <%= score.facturacion || 0 %>,
+                    urgencia: <%= score.urgencia || 0 %>,
+                    facturacion_potencial: <%= score.facturacion_potencial || 0 %>,
+                    impacto_cliente: <%= score.impacto_cliente || 0 %>,
+                    esfuerzo: <%= score.esfuerzo || 0 %>,
+                    incertidumbre: <%= score.incertidumbre || 0 %>,
+                    riesgo: <%= score.riesgo || 0 %>
+                };
+                
+                scoreCalculator.pesos = {
+                    origen: <%= score.peso_origen %>,
+                    facturacion: <%= score.peso_facturacion %>,
+                    urgencia: <%= score.peso_urgencia %>,
+                    facturacion_potencial: <%= score.peso_facturacion_potencial %>,
+                    impacto_cliente: <%= score.peso_impacto_cliente %>,
+                    esfuerzo: <%= score.peso_esfuerzo %>,
+                    incertidumbre: <%= score.peso_incertidumbre %>,
+                    riesgo: <%= score.peso_riesgo %>
+                };
+            <% } %>
+        }
+        
+        async function guardarScore() {
+            if (window.scoreCalculator) {
+                const resultado = await scoreCalculator.guardarScore(funcionalidadId);
+                if (resultado) {
+                    setTimeout(() => {
+                        window.location.href = '/score';
+                    }, 1000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
