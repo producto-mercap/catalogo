@@ -161,7 +161,7 @@ git add .
 git commit -m "feat: Sistema de catálogo de funcionalidades"
 ```
 
-### 2. Subir a GitHub
+### 2. Subir a GitHub  (crear repositorio en github)
 
 ```bash
 git branch -M main
