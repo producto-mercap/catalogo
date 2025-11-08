@@ -93,7 +93,7 @@
                                 </div>
                                 <div class="item-text"><%= func.seccion || '-' %></div>
                                 <div class="item-text"><%= func.sponsor || '-' %></div>
-                                <div class="item-text desktop-only">
+                                <div class="item-text desktop-only monto-valor">
                                     <% if (func.monto) { %>
                                         $<%= new Intl.NumberFormat('es-AR').format(func.monto) %>
                                     <% } else { %>
@@ -105,7 +105,7 @@
                                 </div>
                                 <div>
                                     <% 
-                                    const score = func.score_total || func.score_calculado || 0;
+                                    const score = parseFloat(func.score_total || func.score_calculado || 0);
                                     let scoreClass = 'score-low';
                                     if (score >= 4) scoreClass = 'score-high';
                                     else if (score >= 2.5) scoreClass = 'score-medium';
@@ -155,7 +155,7 @@
                                     <% } %>
                                     
                                     <% 
-                                    const score = func.score_total || func.score_calculado || 0;
+                                    const score = parseFloat(func.score_total || func.score_calculado || 0);
                                     let scoreClass = 'score-low';
                                     if (score >= 4) scoreClass = 'score-high';
                                     else if (score >= 2.5) scoreClass = 'score-medium';

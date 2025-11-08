@@ -69,7 +69,7 @@
                         </div>
                         
                         <% ranking.forEach((func, index) => { 
-                            const score = func.score_calculado || 0;
+                            const score = parseFloat(func.score_calculado || 0);
                             let scoreClass = 'score-low';
                             if (score >= 4) scoreClass = 'score-high';
                             else if (score >= 2.5) scoreClass = 'score-medium';
@@ -106,37 +106,6 @@
                                 </div>
                             </div>
                         <% }) %>
-                    </div>
-                    
-                    <!-- Criterios Promedios -->
-                    <div class="card" style="margin-top: 24px; cursor: default;">
-                        <h3 style="margin-bottom: 16px;">Promedio de Criterios</h3>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
-                            <div>
-                                <div class="text-muted text-small">Origen</div>
-                                <div style="font-size: 20px; font-weight: 600; margin-top: 4px;">
-                                    <%= estadisticas.promedio_origen ? parseFloat(estadisticas.promedio_origen).toFixed(1) : '0.0' %>/5
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-muted text-small">Facturación</div>
-                                <div style="font-size: 20px; font-weight: 600; margin-top: 4px;">
-                                    <%= estadisticas.promedio_facturacion ? parseFloat(estadisticas.promedio_facturacion).toFixed(1) : '0.0' %>/5
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-muted text-small">Urgencia</div>
-                                <div style="font-size: 20px; font-weight: 600; margin-top: 4px;">
-                                    <%= estadisticas.promedio_urgencia ? parseFloat(estadisticas.promedio_urgencia).toFixed(1) : '0.0' %>/5
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-muted text-small">Impacto Cliente</div>
-                                <div style="font-size: 20px; font-weight: 600; margin-top: 4px;">
-                                    <%= estadisticas.promedio_impacto_cliente ? parseFloat(estadisticas.promedio_impacto_cliente).toFixed(1) : '0.0' %>/5
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 <% } %>
             </div>

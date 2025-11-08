@@ -74,12 +74,13 @@
                                                 <%= func.titulo %>
                                                 <% if (func.score_calculado) { %>
                                                     <% 
+                                                    const score = parseFloat(func.score_calculado);
                                                     let scoreClass = 'score-low';
-                                                    if (func.score_calculado >= 4) scoreClass = 'score-high';
-                                                    else if (func.score_calculado >= 2.5) scoreClass = 'score-medium';
+                                                    if (score >= 4) scoreClass = 'score-high';
+                                                    else if (score >= 2.5) scoreClass = 'score-medium';
                                                     %>
                                                     <span class="score-badge <%= scoreClass %>" style="margin-left: 8px; font-size: 11px;">
-                                                        <%= func.score_calculado.toFixed(1) %>
+                                                        <%= score.toFixed(1) %>
                                                     </span>
                                                 <% } %>
                                             </div>
