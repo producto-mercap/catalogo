@@ -23,21 +23,37 @@
                         Nueva Funcionalidad
                     </button>
                     
-                    <div style="position: relative;">
-                        <button class="filter-btn" onclick="toggleFilterDropdown()" title="Filtrar por sección">
+                            <div style="position: relative;">
+                        <button class="filter-btn" onclick="toggleFilterDropdown()" title="Filtrar">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
                             </svg>
                         </button>
                         <div class="filter-dropdown" id="filterDropdown">
-                            <div class="filter-option <%= !filtros.seccion ? 'selected' : '' %>" onclick="filtrarPorSeccion('')">
+                            <div style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--border-color); font-size: 13px; color: var(--text-secondary);">
+                                POR SECCIÓN
+                            </div>
+                            <div class="filter-option <%= !filtros.seccion ? 'selected' : '' %>" onclick="filtrarPor('seccion', '')">
                                 Todas las secciones
                             </div>
                             <% secciones.forEach(seccion => { %>
-                                <div class="filter-option <%= filtros.seccion === seccion ? 'selected' : '' %>" onclick="filtrarPorSeccion('<%= seccion %>')">
+                                <div class="filter-option <%= filtros.seccion === seccion ? 'selected' : '' %>" onclick="filtrarPor('seccion', '<%= seccion %>')">
                                     <%= seccion %>
                                 </div>
                             <% }) %>
+                            <div style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color); font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
+                                POR SPONSOR
+                            </div>
+                            <div class="filter-option <%= !filtros.sponsor ? 'selected' : '' %>" onclick="filtrarPor('sponsor', '')">
+                                Todos los sponsors
+                            </div>
+                            <% if (typeof sponsors !== 'undefined') { %>
+                                <% sponsors.forEach(sponsor => { %>
+                                    <div class="filter-option <%= filtros.sponsor === sponsor ? 'selected' : '' %>" onclick="filtrarPor('sponsor', '<%= sponsor %>')">
+                                        <%= sponsor %>
+                                    </div>
+                                <% }) %>
+                            <% } %>
                         </div>
                     </div>
                 </div>

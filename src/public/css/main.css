@@ -11,7 +11,7 @@
 :root {
     --sidebar-width: 256px;
     --header-height: 64px;
-    --primary-color: #1a73e8;
+    --primary-color: #0D5AA2;
     --hover-bg: #f1f3f4;
     --border-color: #dadce0;
     --text-primary: #202124;
@@ -103,9 +103,9 @@ h3 {
 }
 
 .sidebar-toggle {
-    position: absolute;
-    right: -12px;
-    top: 50%;
+    position: fixed;
+    left: calc(var(--sidebar-width) - 12px);
+    top: 50vh;
     transform: translateY(-50%);
     width: 24px;
     height: 24px;
@@ -118,6 +118,10 @@ h3 {
     justify-content: center;
     transition: all 0.2s;
     z-index: 11;
+}
+
+.sidebar.collapsed + * .sidebar-toggle {
+    left: 52px;
 }
 
 .sidebar-toggle:hover {
@@ -258,7 +262,7 @@ h3 {
 
 .search-input::placeholder {
     color: var(--text-secondary);
-    font-weight: 400;
+    font-weight: 500;
 }
 
 .header-actions {
@@ -398,13 +402,13 @@ h3 {
 }
 
 .btn-primary:hover {
-    background: #1765cc;
-    border-color: #1765cc;
+    background: #0A4887;
+    border-color: #0A4887;
     box-shadow: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
 }
 
 .btn-primary:active {
-    background: #1557b0;
+    background: #08396C;
 }
 
 /* Select mejorado con estilo Google */
@@ -562,6 +566,26 @@ select.btn:focus {
     font-weight: 500;
     background: #e8f0fe;
     color: var(--primary-color);
+}
+
+/* Tags de clientes */
+.client-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: #e8f0fe;
+    color: var(--primary-color);
+    margin-right: 4px;
+    margin-bottom: 4px;
+}
+
+.client-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
 }
 
 /* Vista de tarjetas */

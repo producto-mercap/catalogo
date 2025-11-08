@@ -5,11 +5,21 @@ console.log('✅ Aplicación Catálogo cargada');
 // Toggle sidebar
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
+    const toggle = document.querySelector('.sidebar-toggle');
     if (sidebar) {
         sidebar.classList.toggle('collapsed');
         // Guardar el estado en localStorage
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem('sidebarCollapsed', isCollapsed);
+        
+        // Actualizar posición del botón toggle
+        if (toggle) {
+            if (isCollapsed) {
+                toggle.style.left = '52px';
+            } else {
+                toggle.style.left = 'calc(var(--sidebar-width) - 12px)';
+            }
+        }
     }
 }
 
@@ -58,13 +68,13 @@ function buscar(event) {
     }
 }
 
-// Filtrar por sección
-function filtrarPorSeccion(seccion) {
+// Filtrar por campo
+function filtrarPor(campo, valor) {
     const params = new URLSearchParams(window.location.search);
-    if (seccion) {
-        params.set('seccion', seccion);
+    if (valor) {
+        params.set(campo, valor);
     } else {
-        params.delete('seccion');
+        params.delete(campo);
     }
     // Cerrar dropdown
     const dropdown = document.getElementById('filterDropdown');
@@ -72,6 +82,11 @@ function filtrarPorSeccion(seccion) {
         dropdown.classList.remove('active');
     }
     window.location.search = params.toString();
+}
+
+// Mantener compatibilidad con filtrarPorSeccion
+function filtrarPorSeccion(seccion) {
+    filtrarPor('seccion', seccion);
 }
 
 // Ordenar
