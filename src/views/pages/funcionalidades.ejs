@@ -11,7 +11,7 @@
     <header class="top-header">
         <div style="display: flex; align-items: center; gap: 12px;">
             <img src="/images/logo.png" alt="Logo" style="height: 28px; width: auto; display: block;" onerror="this.style.display='none';" />
-            <span style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif;">Catálogo</span>
+            <span onclick="window.location.href='/funcionalidades'" style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">Catálogo</span>
         </div>
     </header>
     
@@ -232,7 +232,7 @@
                                         <%= (func.titulo || '?').substring(0, 1).toUpperCase() %>
                                     </div>
                                     <div>
-                                        <div><%= (func.titulo || 'Sin título').length > 50 ? (func.titulo || 'Sin título').substring(0, 50) + '...' : (func.titulo || 'Sin título') %></div>
+                                        <div><%= func.titulo || 'Sin título' %></div>
                                         <% if (func.descripcion) { %>
                                             <div class="text-small text-muted text-truncate" style="max-width: 400px;">
                                                 <%= func.descripcion %>
@@ -240,7 +240,7 @@
                                         <% } %>
                                     </div>
                                 </div>
-                                <div class="item-text"><%= func.seccion || '-' %></div>
+                                <div class="item-text"><%= (func.seccion || '-').length > 20 ? (func.seccion || '-').substring(0, 20) + '...' : (func.seccion || '-') %></div>
                                 <div class="item-text"><%= func.sponsor || '-' %></div>
                                 <div class="item-text desktop-only monto-valor">
                                     <% if (func.monto) { %>
@@ -279,7 +279,7 @@
                         <% funcionalidades.forEach(func => { %>
                             <div class="card" onclick="verDetalle(<%= func.redmine_id %>)">
                                 <div class="card-header">
-                                    <h3 class="card-title"><%= (func.titulo || 'Sin título').length > 50 ? (func.titulo || 'Sin título').substring(0, 50) + '...' : (func.titulo || 'Sin título') %></h3>
+                                    <h3 class="card-title"><%= func.titulo || 'Sin título' %></h3>
                                     <button class="card-menu" onclick="event.stopPropagation(); eliminarFuncionalidad(<%= func.redmine_id %>)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>

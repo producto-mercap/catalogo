@@ -11,7 +11,7 @@
     <header class="top-header">
         <div style="display: flex; align-items: center; gap: 12px;">
             <img src="/images/logo.png" alt="Logo" style="height: 28px; width: auto; display: block;" onerror="this.style.display='none';" />
-            <span style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif;">Catálogo</span>
+            <span onclick="window.location.href='/funcionalidades'" style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">Catálogo</span>
         </div>
     </header>
     
@@ -155,50 +155,342 @@
                     </div>
                 </div>
                 
-                <!-- Métricas -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px;">
-                    <div class="card" style="cursor: default;">
-                        <div class="text-muted text-small">Total Clientes</div>
-                        <div style="font-size: 32px; font-weight: 600; color: var(--primary-color); margin-top: 8px;">
-                            <%= clientes.length %>
+                <!-- Métricas y Gráficos -->
+                <div style="margin-top: 32px;">
+                    <!-- Tarjetas de métricas principales -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                        <!-- Total Clientes -->
+                        <div class="glue-card" style="background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 24px; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(60,64,67,.15)'" onmouseout="this.style.boxShadow='none'">
+                            <div class="glue-card__content" style="font-size: 14px; color: #5f6368; margin-bottom: 16px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 400;">
+                                Total Clientes
+                            </div>
+                            <div style="font-size: 48px; font-weight: 400; color: #202124; font-family: 'Google Sans', 'Roboto', sans-serif; line-height: 1.2;">
+                                <%= clientes.length %>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Funcionalidades -->
+                        <div class="glue-card" style="background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 24px; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(60,64,67,.15)'" onmouseout="this.style.boxShadow='none'">
+                            <div class="glue-card__content" style="font-size: 14px; color: #5f6368; margin-bottom: 16px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 400;">
+                                Total Funcionalidades
+                            </div>
+                            <div style="font-size: 48px; font-weight: 400; color: #202124; font-family: 'Google Sans', 'Roboto', sans-serif; line-height: 1.2;">
+                                <%= funcionalidades.length %>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="card" style="cursor: default;">
-                        <div class="text-muted text-small">Total Funcionalidades</div>
-                        <div style="font-size: 32px; font-weight: 600; color: var(--primary-color); margin-top: 8px;">
-                            <%= funcionalidades.length %>
+                    <!-- Gráficos -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+                        <!-- Gráfico de Barras - Estados Comerciales -->
+                        <div class="glue-card" style="background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 24px;">
+                            <div class="glue-card__content" style="font-size: 16px; color: #202124; margin-bottom: 24px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 500;">
+                                Estados Comerciales
+                            </div>
+                            <div id="barChartContainer" style="height: 300px; position: relative;">
+                                <svg id="barChart" width="100%" height="100%" viewBox="0 0 400 300" style="overflow: visible;">
+                                    <!-- Ejes y líneas de referencia se dibujan con JavaScript -->
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de Barras - Funcionalidades Productivas por Cliente -->
+                        <div class="glue-card" style="background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 24px;">
+                            <div class="glue-card__content" style="font-size: 16px; color: #202124; margin-bottom: 24px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 500;">
+                                Funcionalidades Productivas
+                            </div>
+                            <div id="productivasChartContainer" style="height: 300px; position: relative;">
+                                <svg id="productivasChart" width="100%" height="100%" viewBox="0 0 500 300" style="overflow: visible;">
+                                    <!-- Gráfico de barras por cliente se dibuja con JavaScript -->
+                                </svg>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="card" style="cursor: default;">
-                        <div class="text-muted text-small">Relaciones Activas</div>
-                        <div style="font-size: 32px; font-weight: 600; color: var(--primary-color); margin-top: 8px;">
-                            <%= estadisticas.total || 0 %>
+                    <!-- Top Clientes y Top Funcionalidades -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-top: 24px;">
+                        <!-- Top Clientes -->
+                        <div class="glue-card" style="background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 24px;">
+                            <div class="glue-card__content" style="font-size: 16px; color: #202124; margin-bottom: 24px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 500;">
+                                Top Clientes
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <% if (estadisticas.top_clientes && estadisticas.top_clientes.length > 0) { %>
+                                    <% estadisticas.top_clientes.forEach((cliente, index) => { %>
+                                        <div style="display: flex; align-items: center; gap: 16px; padding: 12px; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+                                            <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(52, 168, 83, 0.1); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #34a853; font-family: 'Google Sans', 'Roboto', sans-serif; flex-shrink: 0;">
+                                                <%= index + 1 %>
+                                            </div>
+                                            <div style="flex: 1; font-size: 14px; color: #202124; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                                <%= cliente.nombre %>
+                                            </div>
+                                            <div style="font-size: 18px; font-weight: 500; color: #34a853; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                                <%= cliente.cantidad_productivas %>
+                                            </div>
+                                            <div style="font-size: 12px; color: #5f6368; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                                funcionalidades
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                <% } else { %>
+                                    <div style="text-align: center; padding: 24px; color: #5f6368; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                        No hay datos disponibles
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <!-- Top Funcionalidades -->
+                        <div class="glue-card" style="background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 24px;">
+                            <div class="glue-card__content" style="font-size: 16px; color: #202124; margin-bottom: 24px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 500;">
+                                Top Funcionalidades
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <% if (topFuncionalidades && topFuncionalidades.length > 0) { %>
+                                    <% topFuncionalidades.forEach((func, index) => { %>
+                                        <div style="display: flex; align-items: center; gap: 16px; padding: 12px; border-radius: 8px; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+                                            <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(66, 133, 244, 0.1); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #4285f4; font-family: 'Google Sans', 'Roboto', sans-serif; flex-shrink: 0;">
+                                                <%= index + 1 %>
+                                            </div>
+                                            <div style="flex: 1; font-size: 14px; color: #202124; font-family: 'Google Sans', 'Roboto', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                <%= (func.titulo || 'Sin título').length > 40 ? (func.titulo || 'Sin título').substring(0, 40) + '...' : (func.titulo || 'Sin título') %>
+                                            </div>
+                                            <div style="font-size: 18px; font-weight: 500; color: #4285f4; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                                <%= func.cantidad_clientes %>
+                                            </div>
+                                            <div style="font-size: 12px; color: #5f6368; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                                clientes
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                <% } else { %>
+                                    <div style="text-align: center; padding: 24px; color: #5f6368; font-family: 'Google Sans', 'Roboto', sans-serif;">
+                                        No hay datos disponibles
+                                    </div>
+                                <% } %>
+                            </div>
                         </div>
                     </div>
-                    
+                </div>
+                
+                <script>
+                    // Datos para gráficos
                     <% 
                     const estadosComerciales = ['productivo', 'interesado', 'rechazado', 'en desarrollo', 'Propuesta enviada'];
                     const estadosCount = {};
+                    const estadosColores = {
+                        'productivo': 'rgba(52, 168, 83, 0.6)',
+                        'interesado': 'rgba(251, 188, 4, 0.6)',
+                        'rechazado': 'rgba(234, 67, 53, 0.6)',
+                        'en desarrollo': 'rgba(66, 133, 244, 0.6)',
+                        'Propuesta enviada': 'rgba(154, 160, 166, 0.6)'
+                    };
                     estadisticas.por_estado.forEach(e => {
                         estadosCount[e.estado_comercial] = e.cantidad;
                     });
-                    estadosComerciales.forEach(estado => {
-                        const cantidad = estadosCount[estado] || 0;
-                        if (cantidad > 0) {
+                    const datosEstados = estadosComerciales.map(estado => ({
+                        nombre: estado.charAt(0).toUpperCase() + estado.slice(1),
+                        cantidad: estadosCount[estado] || 0,
+                        color: estadosColores[estado] || '#9aa0a6'
+                    })).filter(d => d.cantidad > 0);
+                    const maxCantidad = Math.max(...datosEstados.map(d => d.cantidad), 1);
                     %>
-                        <div class="card" style="cursor: default;">
-                            <div class="text-muted text-small"><%= estado.charAt(0).toUpperCase() + estado.slice(1) %></div>
-                            <div style="font-size: 32px; font-weight: 600; color: var(--primary-color); margin-top: 8px;">
-                                <%= cantidad %>
-                            </div>
-                        </div>
+                    const datosEstados = <%- JSON.stringify(datosEstados) %>;
+                    const maxCantidad = <%= maxCantidad %>;
+                    const estadosColores = <%- JSON.stringify(estadosColores) %>;
+                    
+                    // Datos de funcionalidades productivas por cliente
                     <% 
-                        }
-                    });
+                    const productivasPorCliente = estadisticas.productivas_por_cliente || [];
+                    const maxProductivas = Math.max(...productivasPorCliente.map(c => c.cantidad_productivas), 1);
                     %>
-                </div>
+                    const productivasPorCliente = <%- JSON.stringify(productivasPorCliente) %>;
+                    const maxProductivas = <%= maxProductivas %>;
+                    
+                    // Dibujar gráfico de barras
+                    function dibujarGraficoBarras() {
+                        const svg = document.getElementById('barChart');
+                        if (!svg || datosEstados.length === 0) return;
+                        
+                        const width = 400;
+                        const height = 300;
+                        const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+                        const chartWidth = width - margin.left - margin.right;
+                        const chartHeight = height - margin.top - margin.bottom;
+                        const barWidth = chartWidth / datosEstados.length * 0.6;
+                        const barSpacing = chartWidth / datosEstados.length;
+                        
+                        // Limpiar SVG
+                        svg.innerHTML = '';
+                        
+                        // Eje Y (líneas de referencia)
+                        for (let i = 0; i <= 5; i++) {
+                            const y = margin.top + chartHeight - (chartHeight / 5) * i;
+                            const value = Math.round((maxCantidad / 5) * i);
+                            
+                            // Línea de referencia
+                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            line.setAttribute('x1', margin.left);
+                            line.setAttribute('x2', width - margin.right);
+                            line.setAttribute('y1', y);
+                            line.setAttribute('y2', y);
+                            line.setAttribute('stroke', '#e8eaed');
+                            line.setAttribute('stroke-width', '1');
+                            svg.appendChild(line);
+                            
+                            // Etiqueta
+                            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            text.setAttribute('x', margin.left - 10);
+                            text.setAttribute('y', y + 4);
+                            text.setAttribute('text-anchor', 'end');
+                            text.setAttribute('font-size', '11');
+                            text.setAttribute('fill', '#5f6368');
+                            text.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                            text.textContent = value;
+                            svg.appendChild(text);
+                        }
+                        
+                        // Barras
+                        datosEstados.forEach((dato, index) => {
+                            const barHeight = (dato.cantidad / maxCantidad) * chartHeight;
+                            const x = margin.left + (barSpacing * index) + (barSpacing - barWidth) / 2;
+                            const y = margin.top + chartHeight - barHeight;
+                            
+                            // Barra
+                            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            rect.setAttribute('x', x);
+                            rect.setAttribute('y', y);
+                            rect.setAttribute('width', barWidth);
+                            rect.setAttribute('height', barHeight);
+                            rect.setAttribute('fill', dato.color);
+                            rect.setAttribute('rx', '4');
+                            rect.style.transition = 'opacity 0.2s';
+                            rect.onmouseover = function() { this.style.opacity = '0.8'; };
+                            rect.onmouseout = function() { this.style.opacity = '1'; };
+                            svg.appendChild(rect);
+                            
+                            // Valor sobre la barra
+                            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            text.setAttribute('x', x + barWidth / 2);
+                            text.setAttribute('y', y - 6);
+                            text.setAttribute('text-anchor', 'middle');
+                            text.setAttribute('font-size', '12');
+                            text.setAttribute('fill', '#202124');
+                            text.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                            text.setAttribute('font-weight', '500');
+                            text.textContent = dato.cantidad;
+                            svg.appendChild(text);
+                            
+                            // Etiqueta del eje X
+                            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            label.setAttribute('x', x + barWidth / 2);
+                            label.setAttribute('y', height - margin.bottom + 20);
+                            label.setAttribute('text-anchor', 'middle');
+                            label.setAttribute('font-size', '11');
+                            label.setAttribute('fill', '#5f6368');
+                            label.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                            label.textContent = dato.nombre;
+                            svg.appendChild(label);
+                        });
+                    }
+                    
+                    // Dibujar gráfico de funcionalidades productivas por cliente
+                    function dibujarGraficoProductivas() {
+                        const svg = document.getElementById('productivasChart');
+                        if (!svg || productivasPorCliente.length === 0) return;
+                        
+                        const width = 500;
+                        const height = 300;
+                        const margin = { top: 20, right: 20, bottom: 60, left: 60 };
+                        const chartWidth = width - margin.left - margin.right;
+                        const chartHeight = height - margin.top - margin.bottom;
+                        const barSpacing = chartWidth / productivasPorCliente.length;
+                        const barWidth = barSpacing * 0.7;
+                        
+                        // Limpiar SVG
+                        svg.innerHTML = '';
+                        
+                        // Color suave para las barras
+                        const barColor = 'rgba(52, 168, 83, 0.5)'; // Verde suave
+                        
+                        // Eje Y (líneas de referencia)
+                        for (let i = 0; i <= 5; i++) {
+                            const y = margin.top + chartHeight - (chartHeight / 5) * i;
+                            const value = Math.round((maxProductivas / 5) * i);
+                            
+                            // Línea de referencia
+                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            line.setAttribute('x1', margin.left);
+                            line.setAttribute('x2', width - margin.right);
+                            line.setAttribute('y1', y);
+                            line.setAttribute('y2', y);
+                            line.setAttribute('stroke', '#e8eaed');
+                            line.setAttribute('stroke-width', '1');
+                            svg.appendChild(line);
+                            
+                            // Etiqueta
+                            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            text.setAttribute('x', margin.left - 10);
+                            text.setAttribute('y', y + 4);
+                            text.setAttribute('text-anchor', 'end');
+                            text.setAttribute('font-size', '11');
+                            text.setAttribute('fill', '#5f6368');
+                            text.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                            text.textContent = value;
+                            svg.appendChild(text);
+                        }
+                        
+                        // Barras
+                        productivasPorCliente.forEach((cliente, index) => {
+                            const barHeight = (cliente.cantidad_productivas / maxProductivas) * chartHeight;
+                            const x = margin.left + (barSpacing * index) + (barSpacing - barWidth) / 2;
+                            const y = margin.top + chartHeight - barHeight;
+                            
+                            // Barra
+                            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                            rect.setAttribute('x', x);
+                            rect.setAttribute('y', y);
+                            rect.setAttribute('width', barWidth);
+                            rect.setAttribute('height', barHeight);
+                            rect.setAttribute('fill', barColor);
+                            rect.setAttribute('rx', '4');
+                            rect.style.transition = 'opacity 0.2s';
+                            rect.onmouseover = function() { this.style.opacity = '0.7'; };
+                            rect.onmouseout = function() { this.style.opacity = '1'; };
+                            svg.appendChild(rect);
+                            
+                            // Valor sobre la barra
+                            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            text.setAttribute('x', x + barWidth / 2);
+                            text.setAttribute('y', y - 6);
+                            text.setAttribute('text-anchor', 'middle');
+                            text.setAttribute('font-size', '12');
+                            text.setAttribute('fill', '#202124');
+                            text.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                            text.setAttribute('font-weight', '500');
+                            text.textContent = cliente.cantidad_productivas;
+                            svg.appendChild(text);
+                            
+                            // Etiqueta del eje X (nombre del cliente)
+                            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            label.setAttribute('x', x + barWidth / 2);
+                            label.setAttribute('y', height - margin.bottom + 20);
+                            label.setAttribute('text-anchor', 'middle');
+                            label.setAttribute('font-size', '11');
+                            label.setAttribute('fill', '#5f6368');
+                            label.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                            label.setAttribute('transform', `rotate(-45 ${x + barWidth / 2} ${height - margin.bottom + 20})`);
+                            label.textContent = cliente.nombre;
+                            svg.appendChild(label);
+                        });
+                    }
+                    
+                    // Inicializar gráficos cuando el DOM esté listo
+                    document.addEventListener('DOMContentLoaded', () => {
+                        dibujarGraficoBarras();
+                        dibujarGraficoProductivas();
+                    });
+                </script>
             </div>
         </div>
     </div>

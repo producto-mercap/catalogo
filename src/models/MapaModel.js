@@ -142,9 +142,40 @@ class MapaModel {
             const queryTotal = 'SELECT COUNT(*) as total FROM cliente_funcionalidad';
             const resultTotal = await pool.query(queryTotal);
             
+            // Funcionalidades productivas por cliente
+            const queryProductivasPorCliente = `
+                SELECT 
+                    c.id,
+                    c.nombre,
+                    COUNT(cf.id) as cantidad_productivas
+                FROM clientes c
+                LEFT JOIN cliente_funcionalidad cf ON c.id = cf.cliente_id AND cf.estado_comercial = 'productivo'
+                GROUP BY c.id, c.nombre
+                HAVING COUNT(cf.id) > 0
+                ORDER BY cantidad_productivas DESC
+            `;
+            const resultProductivas = await pool.query(queryProductivasPorCliente);
+            
+            // Top clientes con más funcionalidades productivas
+            const queryTopClientes = `
+                SELECT 
+                    c.id,
+                    c.nombre,
+                    COUNT(cf.id) as cantidad_productivas
+                FROM clientes c
+                LEFT JOIN cliente_funcionalidad cf ON c.id = cf.cliente_id AND cf.estado_comercial = 'productivo'
+                GROUP BY c.id, c.nombre
+                HAVING COUNT(cf.id) > 0
+                ORDER BY cantidad_productivas DESC
+                LIMIT 5
+            `;
+            const resultTopClientes = await pool.query(queryTopClientes);
+            
             return {
                 por_estado: result.rows,
-                total: resultTotal.rows[0].total
+                total: resultTotal.rows[0].total,
+                productivas_por_cliente: resultProductivas.rows,
+                top_clientes: resultTopClientes.rows
             };
         } catch (error) {
             console.error('Error al obtener estadísticas del mapa:', error);
@@ -252,7 +283,7 @@ class MapaModel {
     }
 
     /**
-     * Obtener funcionalidades más implementadas
+     * Obtener funcionalidades con más clientes
      */
     static async obtenerTopFuncionalidades(limite = 10) {
         try {
@@ -262,12 +293,12 @@ class MapaModel {
                     v.titulo,
                     v.seccion,
                     v.sponsor,
-                    COUNT(cf.id) as total_clientes,
-                    COUNT(CASE WHEN cf.estado_comercial = 'Implementado' THEN 1 END) as implementados
+                    COUNT(DISTINCT cf.cliente_id) as cantidad_clientes
                 FROM v_funcionalidades_completas v
                 LEFT JOIN cliente_funcionalidad cf ON v.redmine_id = cf.funcionalidad_id
                 GROUP BY v.redmine_id, v.titulo, v.seccion, v.sponsor
-                ORDER BY total_clientes DESC
+                HAVING COUNT(DISTINCT cf.cliente_id) > 0
+                ORDER BY cantidad_clientes DESC
                 LIMIT $1
             `;
             const result = await pool.query(query, [limite]);
