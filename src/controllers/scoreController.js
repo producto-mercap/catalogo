@@ -64,7 +64,6 @@ exports.actualizar = async (req, res) => {
         
         const criterios = {
             facturacion: parseInt(req.body.facturacion) || 0,
-            urgencia: parseInt(req.body.urgencia) || 0,
             facturacion_potencial: parseInt(req.body.facturacion_potencial) || 0,
             impacto_cliente: parseInt(req.body.impacto_cliente) || 0,
             esfuerzo: parseInt(req.body.esfuerzo) || 0,
@@ -114,13 +113,12 @@ exports.actualizarPesos = async (req, res) => {
         
         const pesos = {
             peso_origen: parseFloat(req.body.peso_origen) || 40.00,
-            peso_facturacion: parseFloat(req.body.peso_facturacion) || 20.00,
-            peso_urgencia: parseFloat(req.body.peso_urgencia) || 20.00,
+            peso_facturacion: parseFloat(req.body.peso_facturacion) || 40.00,
             peso_facturacion_potencial: parseFloat(req.body.peso_facturacion_potencial) || 20.00,
-            peso_impacto_cliente: parseFloat(req.body.peso_impacto_cliente) || 33.33,
-            peso_esfuerzo: parseFloat(req.body.peso_esfuerzo) || 33.33,
-            peso_incertidumbre: parseFloat(req.body.peso_incertidumbre) || 33.33,
-            peso_riesgo: parseFloat(req.body.peso_riesgo) || 33.33
+            peso_impacto_cliente: parseFloat(req.body.peso_impacto_cliente) || 40.00,
+            peso_esfuerzo: parseFloat(req.body.peso_esfuerzo) || 40.00,
+            peso_incertidumbre: parseFloat(req.body.peso_incertidumbre) || 30.00,
+            peso_riesgo: parseFloat(req.body.peso_riesgo) || 30.00
         };
         
         const score = await ScoreModel.actualizarPesos(id, pesos);
@@ -153,7 +151,6 @@ exports.calcularPreview = async (req, res) => {
     try {
         const criterios = {
             facturacion: parseInt(req.body.facturacion) || 0,
-            urgencia: parseInt(req.body.urgencia) || 0,
             facturacion_potencial: parseInt(req.body.facturacion_potencial) || 0,
             impacto_cliente: parseInt(req.body.impacto_cliente) || 0,
             esfuerzo: parseInt(req.body.esfuerzo) || 0,
@@ -163,12 +160,11 @@ exports.calcularPreview = async (req, res) => {
         
         const pesos = {
             peso_facturacion: parseFloat(req.body.peso_facturacion) || 40.00,
-            peso_urgencia: parseFloat(req.body.peso_urgencia) || 20.00,
             peso_facturacion_potencial: parseFloat(req.body.peso_facturacion_potencial) || 20.00,
-            peso_impacto_cliente: parseFloat(req.body.peso_impacto_cliente) || 20.00,
-            peso_esfuerzo: parseFloat(req.body.peso_esfuerzo) || 33.33,
-            peso_incertidumbre: parseFloat(req.body.peso_incertidumbre) || 33.33,
-            peso_riesgo: parseFloat(req.body.peso_riesgo) || 33.33
+            peso_impacto_cliente: parseFloat(req.body.peso_impacto_cliente) || 40.00,
+            peso_esfuerzo: parseFloat(req.body.peso_esfuerzo) || 40.00,
+            peso_incertidumbre: parseFloat(req.body.peso_incertidumbre) || 30.00,
+            peso_riesgo: parseFloat(req.body.peso_riesgo) || 30.00
         };
         
         const scoreCalculado = ScoreModel.calcularScore(criterios, pesos);

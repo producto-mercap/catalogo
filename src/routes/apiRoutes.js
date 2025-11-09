@@ -33,6 +33,47 @@ router.get('/funcionalidades', async (req, res) => {
 });
 
 /**
+ * API de sugerencias de búsqueda
+ */
+router.get('/funcionalidades/sugerencias', async (req, res) => {
+    try {
+        const query = req.query.q || '';
+        
+        if (!query || query.length < 2) {
+            return res.json({
+                success: true,
+                sugerencias: []
+            });
+        }
+        
+        const filtros = {
+            busqueda: query
+        };
+        
+        const funcionalidades = await FuncionalidadModel.obtenerTodas(filtros);
+        
+        // Limitar a 8 sugerencias
+        const sugerencias = funcionalidades.slice(0, 8).map(func => ({
+            id: func.redmine_id || func.id,
+            titulo: func.titulo || 'Sin título',
+            seccion: func.seccion || '',
+            sponsor: func.sponsor || ''
+        }));
+        
+        res.json({
+            success: true,
+            sugerencias
+        });
+    } catch (error) {
+        console.error('Error en API sugerencias:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener sugerencias'
+        });
+    }
+});
+
+/**
  * API de clientes
  */
 router.get('/clientes', async (req, res) => {

@@ -10,7 +10,7 @@ class FuncionalidadModel {
             let query = `
                 SELECT 
                     v.*,
-                    s.origen, s.facturacion, s.urgencia, s.facturacion_potencial,
+                    s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado
                 FROM v_funcionalidades_completas v
@@ -83,10 +83,10 @@ class FuncionalidadModel {
             const query = `
                 SELECT 
                     v.*,
-                    s.origen, s.facturacion, s.urgencia, s.facturacion_potencial,
+                    s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado,
-                    s.peso_origen, s.peso_facturacion, s.peso_urgencia, 
+                    s.peso_origen, s.peso_facturacion, 
                     s.peso_facturacion_potencial, s.peso_impacto_cliente,
                     s.peso_esfuerzo, s.peso_incertidumbre, s.peso_riesgo
                 FROM v_funcionalidades_completas v

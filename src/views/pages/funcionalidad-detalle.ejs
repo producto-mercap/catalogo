@@ -7,12 +7,18 @@
     <link rel="stylesheet" href="/css/main.css?v=<%= Date.now() %>">
 </head>
 <body>
-    <div class="app-container">
+    <!-- Header General -->
+    <header class="top-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="/images/logo.png" alt="Logo" style="height: 28px; width: auto; display: block;" onerror="this.style.display='none';" />
+            <span style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif;">Catálogo</span>
+        </div>
+    </header>
+    
+    <div class="app-container" style="margin-top: 0;">
         <%- include('../partials/sidebar') %>
         
         <div class="main-content">
-            <%- include('../partials/header') %>
-            
             <div class="content-area">
                 <!-- Botón volver -->
                 <div style="margin-bottom: 24px;">
@@ -67,12 +73,18 @@
                                 </div>
                             </div>
                             
-                            <div style="text-align: right;">
+                            <div style="text-align: right; display: flex; gap: 12px; justify-content: flex-end;">
                                 <button onclick="toggleEdicion()" class="btn btn-primary" id="btnEditar">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                                     </svg>
                                     <span id="btnEditarTexto">Editar</span>
+                                </button>
+                                <button onclick="window.location.href='/score/calculadora/<%= funcionalidad.redmine_id || funcionalidad.id %>'" class="btn btn-evaluar" style="background: #FF9800; color: white; border-color: #FF9800;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    </svg>
+                                    <span>Evaluar</span>
                                 </button>
                             </div>
                         </div>
@@ -216,7 +228,7 @@
                     </div>
                     
                     <!-- Criterios de score (si existen) -->
-                    <% if (funcionalidad.score_facturacion || funcionalidad.score_urgencia || funcionalidad.score_impacto_cliente) { %>
+                    <% if (funcionalidad.score_facturacion || funcionalidad.score_impacto_cliente) { %>
                         <div style="border-top: 1px solid var(--border-color); padding-top: 24px;">
                             <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary);">
                                 Criterios de Evaluación
@@ -245,21 +257,10 @@
                                     </div>
                                 <% } %>
                                 
-                                <% if (funcionalidad.score_urgencia) { %>
-                                    <div style="padding: 16px; background: var(--hover-bg); border-radius: 12px;">
-                                        <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 4px;">
-                                            Urgencia
-                                        </div>
-                                        <div style="font-size: 24px; font-weight: 600; color: var(--primary-color);">
-                                            <%= (parseFloat(funcionalidad.score_urgencia) || 0).toFixed(1) %> <span style="font-size: 14px; color: var(--text-secondary);">/5</span>
-                                        </div>
-                                    </div>
-                                <% } %>
-                                
                                 <% if (funcionalidad.score_impacto_cliente) { %>
                                     <div style="padding: 16px; background: var(--hover-bg); border-radius: 12px;">
                                         <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 4px;">
-                                            Impacto Cliente
+                                            Impacto Negocio
                                         </div>
                                         <div style="font-size: 24px; font-weight: 600; color: var(--primary-color);">
                                             <%= (parseFloat(funcionalidad.score_impacto_cliente) || 0).toFixed(1) %> <span style="font-size: 14px; color: var(--text-secondary);">/5</span>
@@ -325,16 +326,14 @@
                 const data = await response.json();
                 
                 if (!data.success) {
-                    alert('❌ Error al guardar: ' + (data.error || 'Error desconocido'));
+                    console.error('Error al guardar:', data.error || 'Error desconocido');
                     return;
                 }
             } catch (error) {
                 console.error('Error al guardar:', error);
-                alert('❌ Error al guardar los cambios');
                 return;
             }
             
-            alert('✅ Cambios guardados exitosamente');
             window.location.reload();
         }
     </script>

@@ -7,12 +7,18 @@
     <link rel="stylesheet" href="/css/main.css?v=<%= Date.now() %>">
 </head>
 <body>
-    <div class="app-container">
+    <!-- Header General -->
+    <header class="top-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="/images/logo.png" alt="Logo" style="height: 28px; width: auto; display: block;" onerror="this.style.display='none';" />
+            <span style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif;">Catálogo</span>
+        </div>
+    </header>
+    
+    <div class="app-container" style="margin-top: 0;">
         <%- include('../partials/sidebar', { activeMenu: 'score' }) %>
         
         <div class="main-content">
-            <%- include('../partials/header') %>
-            
             <!-- Toolbar -->
             <div class="toolbar">
                 <div class="toolbar-left">
@@ -47,17 +53,16 @@
                         <% 
                         const criterios = [
                             { key: 'facturacion', label: 'Facturación', peso: score ? score.peso_facturacion : 40 },
-                            { key: 'urgencia', label: 'Urgencia', peso: score ? score.peso_urgencia : 20 },
                             { key: 'facturacion_potencial', label: 'Facturación Potencial', peso: score ? score.peso_facturacion_potencial : 20 },
-                            { key: 'impacto_cliente', label: 'Impacto en Cliente', peso: score ? score.peso_impacto_cliente : 20 },
-                            { key: 'esfuerzo', label: 'Esfuerzo', peso: score ? score.peso_esfuerzo : 33.33 },
-                            { key: 'incertidumbre', label: 'Incertidumbre', peso: score ? score.peso_incertidumbre : 33.33 },
-                            { key: 'riesgo', label: 'Riesgo', peso: score ? score.peso_riesgo : 33.33 }
+                            { key: 'impacto_cliente', label: 'Impacto Negocio', peso: score ? score.peso_impacto_cliente : 40 },
+                            { key: 'esfuerzo', label: 'Esfuerzo', peso: score ? score.peso_esfuerzo : 40 },
+                            { key: 'incertidumbre', label: 'Incertidumbre', peso: score ? score.peso_incertidumbre : 30 },
+                            { key: 'riesgo', label: 'Riesgo', peso: score ? score.peso_riesgo : 30 }
                         ];
                         %>
                         
                         <% 
-                        const criteriosPositivos = ['facturacion', 'urgencia', 'facturacion_potencial', 'impacto_cliente'];
+                        const criteriosPositivos = ['facturacion', 'facturacion_potencial', 'impacto_cliente'];
                         const criteriosNegativos = ['esfuerzo', 'incertidumbre', 'riesgo'];
                         %>
                         <% criterios.forEach(criterio => { 
@@ -106,36 +111,44 @@
         const funcionalidadId = <%= funcionalidad.redmine_id || funcionalidad.id %>;
         
         // Cargar valores actuales al inicializar
-        if (window.scoreCalculator) {
-            <% if (score) { %>
-                scoreCalculator.criterios = {
-                    facturacion: <%= score.facturacion || 0 %>,
-                    urgencia: <%= score.urgencia || 0 %>,
-                    facturacion_potencial: <%= score.facturacion_potencial || 0 %>,
-                    impacto_cliente: <%= score.impacto_cliente || 0 %>,
-                    esfuerzo: <%= score.esfuerzo || 0 %>,
-                    incertidumbre: <%= score.incertidumbre || 0 %>,
-                    riesgo: <%= score.riesgo || 0 %>
-                };
-                
-                scoreCalculator.pesos = {
-                    facturacion: <%= score.peso_facturacion || 40 %>,
-                    urgencia: <%= score.peso_urgencia || 20 %>,
-                    facturacion_potencial: <%= score.peso_facturacion_potencial || 20 %>,
-                    impacto_cliente: <%= score.peso_impacto_cliente || 20 %>,
-                    esfuerzo: <%= score.peso_esfuerzo || 33.33 %>,
-                    incertidumbre: <%= score.peso_incertidumbre || 33.33 %>,
-                    riesgo: <%= score.peso_riesgo || 33.33 %>
-                };
-            <% } %>
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.scoreCalculator) {
+                <% if (score) { %>
+                    // Cargar criterios existentes (sin urgencia)
+                    scoreCalculator.criterios = {
+                        facturacion: <%= score.facturacion || 0 %>,
+                        facturacion_potencial: <%= score.facturacion_potencial || 0 %>,
+                        impacto_cliente: <%= score.impacto_cliente || 0 %>,
+                        esfuerzo: <%= score.esfuerzo || 0 %>,
+                        incertidumbre: <%= score.incertidumbre || 0 %>,
+                        riesgo: <%= score.riesgo || 0 %>
+                    };
+                    
+                    // Cargar pesos existentes (usando nombres correctos con prefijo peso_)
+                    scoreCalculator.pesos = {
+                        peso_facturacion: <%= score.peso_facturacion || 40 %>,
+                        peso_facturacion_potencial: <%= score.peso_facturacion_potencial || 20 %>,
+                        peso_impacto_cliente: <%= score.peso_impacto_cliente || 40 %>,
+                        peso_esfuerzo: <%= score.peso_esfuerzo || 40 %>,
+                        peso_incertidumbre: <%= score.peso_incertidumbre || 30 %>,
+                        peso_riesgo: <%= score.peso_riesgo || 30 %>
+                    };
+                    
+                    // Recalcular score con los valores cargados
+                    scoreCalculator.calcularScore();
+                <% } else { %>
+                    // Si no hay score, inicializar con valores por defecto y calcular
+                    scoreCalculator.calcularScore();
+                <% } %>
+            }
+        });
         
         async function guardarScore() {
             if (window.scoreCalculator) {
                 const resultado = await scoreCalculator.guardarScore(funcionalidadId);
                 if (resultado) {
                     setTimeout(() => {
-                        window.location.href = '/score';
+                        window.location.href = '/funcionalidades';
                     }, 1000);
                 }
             }

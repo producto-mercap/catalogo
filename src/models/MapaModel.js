@@ -6,9 +6,29 @@ class MapaModel {
      */
     static async obtenerMapa() {
         try {
+            // Orden por defecto de clientes
+            const ordenDefecto = ['Macro', 'BH', 'GPET', 'Bancor', 'BST', 'VOII', 'Formosa', 'BMR', 'Naranja', 'Tarjeta', 'BLP', 'Chaco', 'Chubut'];
+            
             // Obtener todos los clientes
             const queryClientes = 'SELECT * FROM clientes ORDER BY nombre';
             const resultClientes = await pool.query(queryClientes);
+            
+            // Ordenar clientes según el orden por defecto
+            const clientesOrdenados = resultClientes.rows.sort((a, b) => {
+                const indexA = ordenDefecto.indexOf(a.nombre);
+                const indexB = ordenDefecto.indexOf(b.nombre);
+                
+                // Si ambos están en el orden por defecto, ordenar por índice
+                if (indexA !== -1 && indexB !== -1) {
+                    return indexA - indexB;
+                }
+                // Si solo A está en el orden, A va primero
+                if (indexA !== -1) return -1;
+                // Si solo B está en el orden, B va primero
+                if (indexB !== -1) return 1;
+                // Si ninguno está en el orden, ordenar alfabéticamente
+                return a.nombre.localeCompare(b.nombre);
+            });
             
             // Obtener todas las funcionalidades desde la vista combinada
             const queryFuncionalidades = `
@@ -43,7 +63,7 @@ class MapaModel {
             });
             
             return {
-                clientes: resultClientes.rows,
+                clientes: clientesOrdenados,
                 funcionalidades: resultFuncionalidades.rows,
                 relaciones: relacionesMap
             };

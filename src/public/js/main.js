@@ -15,9 +15,9 @@ function toggleSidebar() {
         // Actualizar posición del botón toggle
         if (toggle) {
             if (isCollapsed) {
-                toggle.style.left = '52px';
+                toggle.style.left = '48px';
             } else {
-                toggle.style.left = 'calc(var(--sidebar-width) - 12px)';
+                toggle.style.left = 'calc(var(--sidebar-width) - 16px)';
             }
         }
     }
@@ -26,9 +26,17 @@ function toggleSidebar() {
 // Restaurar estado del sidebar al cargar
 document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('sidebar');
+    const toggle = document.querySelector('.sidebar-toggle');
     const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
     if (sidebar && isCollapsed) {
         sidebar.classList.add('collapsed');
+        // Asegurar que el toggle esté en la posición correcta cuando está colapsado
+        if (toggle) {
+            toggle.style.left = '48px';
+        }
+    } else if (toggle) {
+        // Si no está colapsado, asegurar posición normal
+        toggle.style.left = 'calc(var(--sidebar-width) - 16px)';
     }
 });
 
@@ -196,8 +204,8 @@ function ordenar(campo) {
 // Actualizar UI de ordenamiento
 function actualizarOrdenamiento() {
     const params = new URLSearchParams(window.location.search);
-    const ordenActual = params.get('orden');
-    const direccionActual = params.get('direccion');
+    const ordenActual = params.get('orden') || 'score_total'; // Por defecto score_total
+    const direccionActual = params.get('direccion') || 'desc'; // Por defecto desc
     
     // Remover clases sorted de todos los headers
     document.querySelectorAll('.list-header > div').forEach(header => {
@@ -208,20 +216,18 @@ function actualizarOrdenamiento() {
         }
     });
     
-    // Agregar clase sorted al header actual
-    if (ordenActual) {
-        const headerActual = document.querySelector(`[data-sort="${ordenActual}"]`);
-        if (headerActual) {
-            headerActual.classList.add('sorted');
-            const sortIcon = headerActual.querySelector('.sort-icon');
-            if (sortIcon) {
-                if (direccionActual === 'asc') {
-                    // Flecha hacia arriba
-                    sortIcon.innerHTML = '<path d="M7 14l5-5 5 5z"/>';
-                } else {
-                    // Flecha hacia abajo
-                    sortIcon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
-                }
+    // Agregar clase sorted al header actual (siempre score_total por defecto)
+    const headerActual = document.querySelector(`[data-sort="${ordenActual}"]`);
+    if (headerActual) {
+        headerActual.classList.add('sorted');
+        const sortIcon = headerActual.querySelector('.sort-icon');
+        if (sortIcon) {
+            if (direccionActual === 'asc') {
+                // Flecha hacia arriba
+                sortIcon.innerHTML = '<path d="M7 14l5-5 5 5z"/>';
+            } else {
+                // Flecha hacia abajo
+                sortIcon.innerHTML = '<path d="M7 10l5 5 5-5z"/>';
             }
         }
     }
@@ -237,13 +243,13 @@ async function sincronizarRedmine() {
     const button = document.getElementById('syncButton');
     if (!button) return;
     
-    // Deshabilitar botón y mostrar loading
+    // Deshabilitar botón
     button.disabled = true;
     button.style.opacity = '0.6';
     button.style.cursor = 'not-allowed';
     
-    const originalTitle = button.title;
-    button.title = 'Sincronizando...';
+    // Mostrar popup de sincronización
+    mostrarPopupSincronizacion();
     
     try {
         const response = await fetch('/api/redmine/sincronizar', {
@@ -261,30 +267,95 @@ async function sincronizarRedmine() {
         const data = await response.json();
         
         if (data.success) {
-            alert(`✅ Sincronización completada:\n- ${data.issues_insertados || 0} issues insertados\n- ${data.issues_actualizados || 0} issues actualizados\n- ${data.funcionalidades_creadas || 0} funcionalidades creadas`);
-            // Recargar la página para ver los cambios
-            window.location.reload();
+            // Actualizar barra de progreso a 100%
+            actualizarProgresoSincronizacion(100);
+            // Esperar un momento y recargar
+            setTimeout(() => {
+                ocultarPopupSincronizacion();
+                window.location.reload();
+            }, 500);
         } else {
-            alert('❌ Error en la sincronización: ' + (data.error || 'Error desconocido'));
+            ocultarPopupSincronizacion();
+            console.error('Error en la sincronización:', data.error || 'Error desconocido');
         }
     } catch (error) {
+        ocultarPopupSincronizacion();
         console.error('Error al sincronizar:', error);
-        alert('❌ Error al sincronizar: ' + error.message);
     } finally {
         // Restaurar botón
         button.disabled = false;
         button.style.opacity = '1';
         button.style.cursor = 'pointer';
-        button.title = originalTitle;
+    }
+}
+
+// Mostrar popup de sincronización
+function mostrarPopupSincronizacion() {
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'syncOverlay';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;';
+    
+    // Crear popup
+    const popup = document.createElement('div');
+    popup.id = 'syncPopup';
+    popup.style.cssText = 'background: white; border-radius: 12px; padding: 24px; min-width: 320px; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+    
+    popup.innerHTML = `
+        <div style="text-align: center;">
+            <div style="font-size: 16px; font-weight: 500; color: #202124; margin-bottom: 16px; font-family: \'Google Sans\', \'Roboto\', sans-serif;">
+                Sincronizando con Redmine
+            </div>
+            <div style="width: 100%; height: 8px; background: #f1f3f4; border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+                <div id="syncProgressBar" style="height: 100%; background: #0D5AA2; width: 0%; transition: width 0.3s ease; border-radius: 4px;"></div>
+            </div>
+            <div id="syncProgressText" style="font-size: 13px; color: #5f6368; font-family: \'Roboto\', sans-serif;">
+                0%
+            </div>
+        </div>
+    `;
+    
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+    
+    // Simular progreso
+    let progreso = 0;
+    const intervalo = setInterval(() => {
+        progreso += Math.random() * 15;
+        if (progreso > 90) progreso = 90;
+        actualizarProgresoSincronizacion(progreso);
+    }, 200);
+    
+    // Guardar intervalo para limpiarlo después
+    overlay.dataset.intervalo = intervalo;
+}
+
+// Actualizar progreso de sincronización
+function actualizarProgresoSincronizacion(porcentaje) {
+    const barra = document.getElementById('syncProgressBar');
+    const texto = document.getElementById('syncProgressText');
+    if (barra) {
+        barra.style.width = porcentaje + '%';
+    }
+    if (texto) {
+        texto.textContent = Math.round(porcentaje) + '%';
+    }
+}
+
+// Ocultar popup de sincronización
+function ocultarPopupSincronizacion() {
+    const overlay = document.getElementById('syncOverlay');
+    if (overlay) {
+        // Limpiar intervalo si existe
+        if (overlay.dataset.intervalo) {
+            clearInterval(overlay.dataset.intervalo);
+        }
+        overlay.remove();
     }
 }
 
 // Eliminar funcionalidad
 async function eliminarFuncionalidad(id) {
-    if (!confirm('¿Estás seguro de eliminar esta funcionalidad?')) {
-        return;
-    }
-    
     try {
         const response = await fetch(`/funcionalidades/${id}`, {
             method: 'DELETE'
@@ -293,39 +364,54 @@ async function eliminarFuncionalidad(id) {
         const data = await response.json();
         
         if (data.success) {
-            alert('Funcionalidad eliminada exitosamente');
             window.location.reload();
         } else {
-            alert('Error al eliminar: ' + data.error);
+            console.error('Error al eliminar:', data.error);
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error al eliminar la funcionalidad');
     }
 }
 
 // Score Calculator
 class ScoreCalculator {
     constructor() {
-        this.criterios = {};
+        this.criterios = {
+            facturacion: 0,
+            facturacion_potencial: 0,
+            impacto_cliente: 0,
+            esfuerzo: 0,
+            incertidumbre: 0,
+            riesgo: 0
+        };
+        
+        // Pesos con nombres correctos (prefijo peso_)
+        // Impacto Negocio: 40%, Esfuerzo: 40%, Incertidumbre: 30%, Riesgo: 30%
         this.pesos = {
-            facturacion: 40,
-            urgencia: 20,
-            facturacion_potencial: 20,
-            impacto_cliente: 20,
-            esfuerzo: 33.33,
-            incertidumbre: 33.33,
-            riesgo: 33.33
+            peso_facturacion: 40,
+            peso_facturacion_potencial: 20,
+            peso_impacto_cliente: 40,
+            peso_esfuerzo: 40,
+            peso_incertidumbre: 30,
+            peso_riesgo: 30
         };
     }
     
     init() {
-        // Escuchar cambios en los sliders
+        // Cargar valores iniciales desde los sliders
         document.querySelectorAll('.criterio-slider').forEach(slider => {
+            const criterio = slider.dataset.criterio;
+            const valor = parseInt(slider.value) || 0;
+            this.criterios[criterio] = valor;
+            
+            // Escuchar cambios en los sliders
             slider.addEventListener('input', (e) => {
                 this.actualizarCriterio(e.target.dataset.criterio, e.target.value);
             });
         });
+        
+        // Calcular score inicial
+        this.calcularScore();
     }
     
     actualizarCriterio(criterio, valor) {
@@ -341,25 +427,52 @@ class ScoreCalculator {
     }
     
     calcularScore() {
-        // Criterios positivos (suman)
-        const criteriosPositivos = ['facturacion', 'urgencia', 'facturacion_potencial', 'impacto_cliente'];
+        // Criterios positivos (suman) - sin urgencia
+        const criteriosPositivos = ['facturacion', 'facturacion_potencial', 'impacto_cliente'];
         const criteriosNegativos = ['esfuerzo', 'incertidumbre', 'riesgo'];
         
         let positivos = 0;
         let negativos = 0;
         
+        // Mapeo de nombres de criterios a nombres de pesos
+        const pesoMap = {
+            'facturacion': 'peso_facturacion',
+            'facturacion_potencial': 'peso_facturacion_potencial',
+            'impacto_cliente': 'peso_impacto_cliente',
+            'esfuerzo': 'peso_esfuerzo',
+            'incertidumbre': 'peso_incertidumbre',
+            'riesgo': 'peso_riesgo'
+        };
+        
+        // Calcular promedio ponderado de valores positivos (usando pesos)
+        let sumaPonderadaPositivos = 0;
+        let sumaPesosPositivos = 0;
+        
+        // Calcular promedio ponderado de valores negativos (usando pesos)
+        let sumaPonderadaNegativos = 0;
+        let sumaPesosNegativos = 0;
+        
         for (const [key, value] of Object.entries(this.criterios)) {
-            const peso = this.pesos[key] || 0;
-            const contribucion = (value * peso / 100);
+            const pesoKey = pesoMap[key];
+            const peso = this.pesos[pesoKey] || this.pesos[key] || 0;
+            const valor = parseInt(value) || 0;
+            const contribucion = valor * (parseFloat(peso) || 0) / 100;
             
             if (criteriosPositivos.includes(key)) {
-                positivos += contribucion;
+                sumaPonderadaPositivos += contribucion;
+                sumaPesosPositivos += parseFloat(peso) || 0;
             } else if (criteriosNegativos.includes(key)) {
-                negativos += contribucion;
+                sumaPonderadaNegativos += contribucion;
+                sumaPesosNegativos += parseFloat(peso) || 0;
             }
         }
         
-        const score = positivos - negativos;
+        // Calcular promedios ponderados (suma ponderada / suma de pesos)
+        const promedioPositivos = sumaPesosPositivos > 0 ? sumaPonderadaPositivos / (sumaPesosPositivos / 100) : 0;
+        const promedioNegativos = sumaPesosNegativos > 0 ? sumaPonderadaNegativos / (sumaPesosNegativos / 100) : 0;
+        
+        // Score = promedio positivos - (promedio negativos × 0.5)
+        const score = promedioPositivos - (promedioNegativos * 0.5);
         
         // Actualizar display del score
         const scoreDisplay = document.getElementById('scoreTotal');
@@ -383,14 +496,14 @@ class ScoreCalculator {
             const data = await response.json();
             
             if (data.success) {
-                alert('Score guardado exitosamente');
                 return data.score;
             } else {
-                alert('Error al guardar: ' + data.error);
+                console.error('Error al guardar:', data.error);
+                return null;
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error al guardar el score');
+            return null;
         }
     }
 }
@@ -429,12 +542,11 @@ class MapaClientes {
                 }
                 return true;
             } else {
-                alert('Error al actualizar: ' + data.error);
+                console.error('Error al actualizar:', data.error);
                 return false;
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error al actualizar el estado');
             return false;
         }
     }

@@ -11,7 +11,7 @@ exports.index = async (req, res) => {
             secciones: req.query.secciones ? (Array.isArray(req.query.secciones) ? req.query.secciones : [req.query.secciones]) : [],
             sponsor: req.query.sponsor || '',
             sponsors: req.query.sponsors ? (Array.isArray(req.query.sponsors) ? req.query.sponsors : [req.query.sponsors]) : [],
-            orden: req.query.orden || 'created_at',
+            orden: req.query.orden || 'score_total',
             direccion: req.query.direccion || 'desc'
         };
         

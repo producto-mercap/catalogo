@@ -19,60 +19,60 @@
         <%- include('../partials/sidebar', { activeMenu: 'mapa' }) %>
         
         <div class="main-content">
-            <!-- Toolbar -->
-            <div class="toolbar">
-                <div class="toolbar-left">
-                    <button class="btn btn-primary" onclick="abrirModalNuevoCliente()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                        </svg>
-                        Nuevo Cliente
-                    </button>
-                </div>
-                <div class="toolbar-right">
-                    <span class="text-muted text-small">
-                        <%= clientes.length %> clientes × <%= funcionalidades.length %> funcionalidades
-                    </span>
-                </div>
-            </div>
-            
             <!-- Contenido -->
-            <div class="content-area">
+            <div class="content-area" style="padding-top: 0;">
                 
-                <!-- Mapa Grid -->
-                <div class="mapa-grid">
-                    <table class="mapa-table">
-                        <thead>
-                            <tr>
-                                <th style="min-width: 80px; width: 80px; background: var(--hover-bg); font-weight: 600; font-size: 14px; color: var(--text-primary); padding: 16px 24px; border-bottom: 1px solid var(--border-color);">Funcionalidad</th>
-                                <% clientes.forEach(cliente => { %>
-                                    <th style="min-width: 30px; width: 35px; background: var(--hover-bg); font-weight: 600; font-size: 14px; color: var(--text-primary); padding: 16px 24px; border-bottom: 1px solid var(--border-color);">
-                                        <%= cliente.nombre %>
-                                    </th>
-                                <% }) %>
-                            </tr>
-                        </thead>
+                <!-- Contenedor con scroll horizontal y flechas -->
+                <div style="position: relative;">
+                    <!-- Flecha izquierda -->
+                    <button id="scrollLeftBtn" onclick="scrollTable(-200)" style="display: none; position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 10; background: white; border: 1px solid var(--border-color); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s; align-items: center; justify-content: center; display: flex;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='white'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Flecha derecha -->
+                    <button id="scrollRightBtn" onclick="scrollTable(200)" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); z-index: 10; background: white; border: 1px solid var(--border-color); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s; align-items: center; justify-content: center; display: flex;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='white'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                        </svg>
+                    </button>
+                
+                    <!-- Mapa Grid -->
+                    <div class="mapa-grid" id="mapaGrid" style="overflow-x: auto; position: relative;">
+                        <table class="mapa-table" id="mapaTable">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 200px; width: 200px; background: var(--hover-bg); font-weight: 600; font-size: 14px; color: var(--text-primary); padding: 16px 24px; border-bottom: 1px solid var(--border-color); position: sticky; left: 0; z-index: 5; background: var(--hover-bg);">Funcionalidad</th>
+                                    <% clientes.forEach((cliente, index) => { %>
+                                        <th 
+                                            class="cliente-header" 
+                                            data-cliente-index="<%= index %>"
+                                            data-cliente-id="<%= cliente.id %>"
+                                            data-cliente-nombre="<%= cliente.nombre %>"
+                                            draggable="true"
+                                            onclick="ordenarPorCliente(<%= index %>)"
+                                            style="min-width: 25px; width: 28px; background: var(--hover-bg); font-weight: 600; font-size: 12px; color: var(--text-primary); padding: 8px 4px; border-bottom: 1px solid var(--border-color); cursor: move; user-select: none; transition: background 0.2s;"
+                                            onmouseover="this.style.background='#e8f0fe'"
+                                            onmouseout="if (!this.classList.contains('sorted')) this.style.background='var(--hover-bg)'"
+                                            title="Arrastrar para reordenar o click para ordenar"
+                                        >
+                                            <%= cliente.nombre %>
+                                            <span class="sort-indicator" style="display: none; margin-left: 4px; font-size: 10px;">▼</span>
+                                        </th>
+                                    <% }) %>
+                                </tr>
+                            </thead>
                         <tbody>
                             <% funcionalidades.forEach(func => { %>
                                 <tr>
-                                    <td style="font-weight: 500; font-size: 11px; padding: 6px; border: 1px solid rgba(218, 220, 224, 0.1);">
-                                        <div style="display: flex; align-items: center; gap: 4px;">
+                                    <td style="font-weight: 500; font-size: 11px; padding: 8px 12px; border: 1px solid rgba(218, 220, 224, 0.1); position: sticky; left: 0; z-index: 3; background: white;">
+                                        <div style="display: flex; align-items: center; gap: 6px;">
                                             <div class="item-icon" style="flex-shrink: 0; width: 20px; height: 20px; font-size: 10px;">
                                                 <%= (func.titulo || '?').substring(0, 1).toUpperCase() %>
                                             </div>
-                                            <div style="font-size: 11px; line-height: 1.2;">
-                                                <%= (func.titulo || 'Sin título').length > 35 ? (func.titulo || 'Sin título').substring(0, 35) + '...' : (func.titulo || 'Sin título') %>
-                                                <% if (func.score_calculado) { %>
-                                                    <% 
-                                                    const score = parseFloat(func.score_calculado) || 0;
-                                                    let scoreClass = 'score-low';
-                                                    if (score >= 4) scoreClass = 'score-high';
-                                                    else if (score >= 2.5) scoreClass = 'score-medium';
-                                                    %>
-                                                    <span class="score-badge <%= scoreClass %>" style="margin-left: 4px; font-size: 9px; padding: 1px 4px;">
-                                                        <%= score.toFixed(1) %>
-                                                    </span>
-                                                <% } %>
+                                            <div style="font-size: 11px; line-height: 1.3;">
+                                                <%= (func.titulo || 'Sin título').length > 60 ? (func.titulo || 'Sin título').substring(0, 60) + '...' : (func.titulo || 'Sin título') %>
                                             </div>
                                         </div>
                                     </td>
@@ -113,15 +113,17 @@
                                         }
                                         %>
                                         <td class="mapa-cell item-text" 
-                                            style="<%= cellStyle %>"
+                                            style="<%= cellStyle %> width: 28px; min-width: 28px; position: relative;"
                                             onclick="mostrarDropdownEstado(event, <%= cliente.id %>, <%= func.redmine_id || func.id %>, '<%= estado || null %>')"
                                             data-cliente="<%= cliente.id %>"
                                             data-funcionalidad="<%= func.redmine_id || func.id %>"
+                                            data-estado="<%= estado ? textoEstado : '' %>"
                                         >
                                             <%= estado ? textoEstado : '+' %>
                                             <!-- Dropdown de estados -->
                                             <div id="dropdown-estado-<%= cliente.id %>-<%= func.redmine_id || func.id %>" 
-                                                 style="display: none; position: absolute; top: 100%; left: 0; z-index: 100; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); min-width: 160px; margin-top: 4px;">
+                                                 class="dropdown-estado"
+                                                 style="display: none; position: fixed; z-index: 10000; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); min-width: 180px; max-width: 250px;">
                                                 <% 
                                                 const estadosDisponibles = ['productivo', 'interesado', 'rechazado', 'en desarrollo', 'Propuesta enviada'];
                                                 estadosDisponibles.forEach(estadoDisponible => {
@@ -150,6 +152,7 @@
                             <% }) %>
                         </tbody>
                     </table>
+                    </div>
                 </div>
                 
                 <!-- Métricas -->
@@ -200,157 +203,116 @@
         </div>
     </div>
     
-    <!-- Modal Nuevo Cliente -->
-    <div id="modalNuevoCliente" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="card" style="max-width: 500px; width: 90%; margin: auto; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
-                <h2 style="font-size: 20px; font-weight: 500; margin: 0;">Nuevo Cliente</h2>
-                <button onclick="cerrarModalNuevoCliente()" style="background: none; border: none; cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s;" onmouseover="this.style.background='#f1f3f4'" onmouseout="this.style.background='none'">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                    </svg>
-                </button>
-            </div>
-            
-            <form onsubmit="crearCliente(event)" style="display: flex; flex-direction: column; gap: 16px;">
-                <div>
-                    <label style="display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px;">
-                        Nombre del Cliente *
-                    </label>
-                    <input 
-                        type="text" 
-                        id="clienteNombre" 
-                        class="input" 
-                        required
-                        placeholder="Ej: Banco Nación"
-                        style="width: 100%; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border-color); font-size: 14px; font-family: 'Google Sans', 'Roboto', sans-serif;"
-                    />
-                </div>
-                
-                <div>
-                    <label style="display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px;">
-                        Color *
-                    </label>
-                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px;">
-                        <% 
-                        const coloresPasteles = [
-                            { hex: '#FFB3BA', name: 'Rosa' },
-                            { hex: '#FFDFBA', name: 'Melocotón' },
-                            { hex: '#FFFFBA', name: 'Amarillo' },
-                            { hex: '#BAFFC9', name: 'Verde' },
-                            { hex: '#BAE1FF', name: 'Azul' },
-                            { hex: '#E0BBE4', name: 'Lavanda' },
-                            { hex: '#FFCCCB', name: 'Coral' },
-                            { hex: '#B4E4FF', name: 'Cielo' },
-                            { hex: '#C7CEEA', name: 'Lila' },
-                            { hex: '#F0E6FF', name: 'Lavanda claro' },
-                            { hex: '#FFE5E5', name: 'Rosa claro' },
-                            { hex: '#E5F3FF', name: 'Azul claro' },
-                            { hex: '#E8F5E9', name: 'Verde claro' },
-                            { hex: '#FFF3E0', name: 'Naranja claro' },
-                            { hex: '#F3E5F5', name: 'Púrpura claro' },
-                            { hex: '#E0F2F1', name: 'Turquesa' },
-                            { hex: '#FFF9C4', name: 'Amarillo claro' },
-                            { hex: '#FCE4EC', name: 'Rosa suave' },
-                            { hex: '#E1F5FE', name: 'Cyan claro' },
-                            { hex: '#F1F8E9', name: 'Lima claro' }
-                        ];
-                        %>
-                        <% coloresPasteles.forEach((color, index) => { %>
-                            <label style="display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 8px; border-radius: 12px; border: 2px solid transparent; transition: all 0.2s;" 
-                                   onmouseover="this.style.borderColor='<%= color.hex %>'" 
-                                   onmouseout="if (!document.getElementById('color<%= index %>').checked) this.style.borderColor='transparent'">
-                                <input 
-                                    type="radio" 
-                                    name="clienteColor" 
-                                    id="color<%= index %>"
-                                    value="<%= color.hex %>"
-                                    <%= index === 0 ? 'checked' : '' %>
-                                    style="display: none;"
-                                />
-                                <div style="width: 40px; height: 40px; border-radius: 50%; background: <%= color.hex %>; border: 2px solid var(--border-color); margin-bottom: 4px; transition: all 0.2s;"
-                                     onclick="document.getElementById('color<%= index %>').checked = true; actualizarColorSeleccionado('<%= color.hex %>')"
-                                     onmouseover="this.style.transform='scale(1.1)'"
-                                     onmouseout="this.style.transform='scale(1)'"
-                                ></div>
-                                <span style="font-size: 10px; color: var(--text-secondary); text-align: center;"><%= color.name %></span>
-                            </label>
-                        <% }) %>
-                    </div>
-                    <input type="hidden" id="clienteColor" value="<%= coloresPasteles[0].hex %>" />
-                </div>
-                
-                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px;">
-                    <button type="button" class="btn" onclick="cerrarModalNuevoCliente()">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        Crear Cliente
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
     <script src="/js/main.js"></script>
     <script>
-        function abrirModalNuevoCliente() {
-            document.getElementById('modalNuevoCliente').style.display = 'flex';
-        }
+        // Variables para ordenamiento
+        let ordenActual = null;
+        let ordenDireccion = 'asc'; // 'asc' o 'desc'
         
-        function cerrarModalNuevoCliente() {
-            document.getElementById('modalNuevoCliente').style.display = 'none';
-            document.getElementById('clienteNombre').value = '';
-            // Resetear color al primero
-            document.getElementById('color0').checked = true;
-            document.getElementById('clienteColor').value = '<%= coloresPasteles[0].hex %>';
-        }
-        
-        function actualizarColorSeleccionado(hex) {
-            document.getElementById('clienteColor').value = hex;
-        }
-        
-        async function crearCliente(event) {
-            event.preventDefault();
-            
-            const nombre = document.getElementById('clienteNombre').value.trim();
-            const color = document.getElementById('clienteColor').value;
-            
-            if (!nombre) {
-                alert('El nombre del cliente es requerido');
-                return;
+        // Funciones de scroll horizontal
+        function scrollTable(direction) {
+            const grid = document.getElementById('mapaGrid');
+            if (grid) {
+                grid.scrollBy({ left: direction, behavior: 'smooth' });
+                actualizarFlechasScroll();
             }
+        }
+        
+        function actualizarFlechasScroll() {
+            const grid = document.getElementById('mapaGrid');
+            const leftBtn = document.getElementById('scrollLeftBtn');
+            const rightBtn = document.getElementById('scrollRightBtn');
             
-            try {
-                const response = await fetch('/mapa/clientes', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ nombre, color })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('✅ Cliente creado exitosamente');
-                    cerrarModalNuevoCliente();
-                    window.location.reload();
+            if (grid && leftBtn && rightBtn) {
+                // Mostrar/ocultar flecha izquierda
+                if (grid.scrollLeft > 0) {
+                    leftBtn.style.display = 'flex';
                 } else {
-                    alert('❌ Error: ' + (data.error || 'Error desconocido'));
+                    leftBtn.style.display = 'none';
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('❌ Error al crear el cliente');
+                
+                // Mostrar/ocultar flecha derecha
+                const maxScroll = grid.scrollWidth - grid.clientWidth;
+                if (grid.scrollLeft < maxScroll - 10) {
+                    rightBtn.style.display = 'flex';
+                } else {
+                    rightBtn.style.display = 'none';
+                }
             }
         }
+        
+        // Ordenar por cliente
+        function ordenarPorCliente(clienteIndex) {
+            const tbody = document.querySelector('#mapaTable tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Determinar dirección de ordenamiento
+            const header = document.querySelector(`.cliente-header[data-cliente-index="${clienteIndex}"]`);
+            if (ordenActual === clienteIndex) {
+                ordenDireccion = ordenDireccion === 'asc' ? 'desc' : 'asc';
+            } else {
+                ordenDireccion = 'asc';
+                ordenActual = clienteIndex;
+            }
+            
+            // Limpiar indicadores anteriores
+            document.querySelectorAll('.cliente-header').forEach(h => {
+                h.classList.remove('sorted');
+                h.querySelector('.sort-indicator').style.display = 'none';
+            });
+            
+            // Marcar header actual
+            header.classList.add('sorted');
+            const indicator = header.querySelector('.sort-indicator');
+            indicator.style.display = 'inline';
+            indicator.textContent = ordenDireccion === 'asc' ? '▲' : '▼';
+            
+            // Ordenar filas según el estado en la columna del cliente
+            rows.sort((a, b) => {
+                const cellA = a.querySelectorAll('td')[clienteIndex + 1]; // +1 porque la primera columna es funcionalidad
+                const cellB = b.querySelectorAll('td')[clienteIndex + 1];
+                
+                const estadoA = cellA.getAttribute('data-estado') || '';
+                const estadoB = cellB.getAttribute('data-estado') || '';
+                
+                // Ordenar: primero las que tienen estado, luego las vacías
+                if (estadoA && !estadoB) return ordenDireccion === 'asc' ? -1 : 1;
+                if (!estadoA && estadoB) return ordenDireccion === 'asc' ? 1 : -1;
+                if (!estadoA && !estadoB) return 0;
+                
+                // Si ambas tienen estado, ordenar alfabéticamente
+                const comparacion = estadoA.localeCompare(estadoB);
+                return ordenDireccion === 'asc' ? comparacion : -comparacion;
+            });
+            
+            // Reordenar filas en el DOM
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Actualizar flechas al hacer scroll
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('mapaGrid');
+            if (grid) {
+                grid.addEventListener('scroll', actualizarFlechasScroll);
+                actualizarFlechasScroll();
+            }
+            
+            // Agregar data-estado a las celdas para ordenamiento
+            document.querySelectorAll('.mapa-cell').forEach(cell => {
+                const texto = cell.textContent.trim();
+                if (texto && texto !== '+') {
+                    cell.setAttribute('data-estado', texto);
+                }
+            });
+        });
         
         // Funciones para dropdown de estados
         function mostrarDropdownEstado(event, clienteId, funcionalidadId, estadoActual) {
             event.stopPropagation();
+            event.preventDefault();
             
             // Cerrar otros dropdowns
-            document.querySelectorAll('[id^="dropdown-estado-"]').forEach(dropdown => {
+            document.querySelectorAll('.dropdown-estado').forEach(dropdown => {
                 if (dropdown.id !== `dropdown-estado-${clienteId}-${funcionalidadId}`) {
                     dropdown.style.display = 'none';
                 }
@@ -358,8 +320,35 @@
             
             // Toggle del dropdown actual
             const dropdown = document.getElementById(`dropdown-estado-${clienteId}-${funcionalidadId}`);
+            const cell = event.currentTarget;
+            
             if (dropdown) {
-                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+                const isVisible = dropdown.style.display === 'block';
+                
+                if (!isVisible) {
+                    // Obtener posición de la celda
+                    const rect = cell.getBoundingClientRect();
+                    
+                    // Posicionar el dropdown de forma absoluta respecto al viewport
+                    dropdown.style.position = 'fixed';
+                    dropdown.style.top = (rect.bottom + 4) + 'px';
+                    dropdown.style.left = rect.left + 'px';
+                    dropdown.style.zIndex = '10000';
+                    dropdown.style.display = 'block';
+                    
+                    // Asegurar que el dropdown no se salga de la pantalla
+                    setTimeout(() => {
+                        const dropdownRect = dropdown.getBoundingClientRect();
+                        if (dropdownRect.right > window.innerWidth) {
+                            dropdown.style.left = (window.innerWidth - dropdownRect.width - 10) + 'px';
+                        }
+                        if (dropdownRect.bottom > window.innerHeight) {
+                            dropdown.style.top = (rect.top - dropdownRect.height - 4) + 'px';
+                        }
+                    }, 0);
+                } else {
+                    dropdown.style.display = 'none';
+                }
             }
         }
         
@@ -381,21 +370,123 @@
                     // Recargar página
                     window.location.reload();
                 } else {
-                    alert('❌ Error: ' + (data.error || 'Error desconocido'));
+                    console.error('Error:', data.error || 'Error desconocido');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('❌ Error al actualizar el estado');
             }
         }
         
         // Cerrar dropdowns al hacer clic fuera
         document.addEventListener('click', (event) => {
-            if (!event.target.closest('[id^="dropdown-estado-"]') && !event.target.closest('.mapa-cell')) {
-                document.querySelectorAll('[id^="dropdown-estado-"]').forEach(dropdown => {
+            if (!event.target.closest('.dropdown-estado') && !event.target.closest('.mapa-cell')) {
+                document.querySelectorAll('.dropdown-estado').forEach(dropdown => {
                     dropdown.style.display = 'none';
                 });
             }
+        });
+        
+        // Drag and Drop para reordenar columnas
+        let draggedHeader = null;
+        let draggedIndex = null;
+        
+        function inicializarDragAndDrop() {
+            document.querySelectorAll('.cliente-header').forEach((header, index) => {
+            header.addEventListener('dragstart', (e) => {
+                draggedHeader = header;
+                draggedIndex = index;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', header.innerHTML);
+                header.style.opacity = '0.5';
+            });
+            
+            header.addEventListener('dragend', (e) => {
+                header.style.opacity = '1';
+                document.querySelectorAll('.cliente-header').forEach(h => {
+                    h.style.borderLeft = '';
+                    h.style.borderRight = '';
+                });
+            });
+            
+            header.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                if (draggedHeader && draggedHeader !== header) {
+                    const rect = header.getBoundingClientRect();
+                    const midpoint = rect.left + rect.width / 2;
+                    const mouseX = e.clientX;
+                    
+                    // Mostrar indicador visual
+                    document.querySelectorAll('.cliente-header').forEach(h => {
+                        h.style.borderLeft = '';
+                        h.style.borderRight = '';
+                    });
+                    
+                    if (mouseX < midpoint) {
+                        header.style.borderLeft = '3px solid var(--primary-color)';
+                    } else {
+                        header.style.borderRight = '3px solid var(--primary-color)';
+                    }
+                }
+            });
+            
+            header.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (draggedHeader && draggedHeader !== header) {
+                    const targetIndex = Array.from(header.parentNode.children).indexOf(header);
+                    const draggedIndex = Array.from(draggedHeader.parentNode.children).indexOf(draggedHeader);
+                    
+                    // Mover header
+                    if (draggedIndex < targetIndex) {
+                        header.parentNode.insertBefore(draggedHeader, header.nextSibling);
+                    } else {
+                        header.parentNode.insertBefore(draggedHeader, header);
+                    }
+                    
+                    // Mover todas las celdas de la columna correspondiente
+                    const tbody = document.querySelector('#mapaTable tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    
+                    rows.forEach(row => {
+                        const cells = Array.from(row.querySelectorAll('td'));
+                        const draggedCell = cells[draggedIndex + 1]; // +1 porque la primera columna es funcionalidad
+                        const targetCell = cells[targetIndex + 1];
+                        
+                        if (draggedIndex < targetIndex) {
+                            targetCell.parentNode.insertBefore(draggedCell, targetCell.nextSibling);
+                        } else {
+                            targetCell.parentNode.insertBefore(draggedCell, targetCell);
+                        }
+                    });
+                    
+                    // Actualizar data-cliente-index en todos los headers
+                    document.querySelectorAll('.cliente-header').forEach((h, idx) => {
+                        h.setAttribute('data-cliente-index', idx);
+                    });
+                }
+                
+                // Limpiar indicadores visuales
+                document.querySelectorAll('.cliente-header').forEach(h => {
+                    h.style.borderLeft = '';
+                    h.style.borderRight = '';
+                });
+            });
+            
+            header.addEventListener('dragleave', (e) => {
+                if (!header.contains(e.relatedTarget)) {
+                    header.style.borderLeft = '';
+                    header.style.borderRight = '';
+                }
+            });
+            });
+        }
+        
+        // Inicializar drag and drop cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            inicializarDragAndDrop();
         });
         
         // Funcionalidad de resize de columnas
