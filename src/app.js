@@ -41,8 +41,14 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000, // 24 horas
         // En Vercel, no especificar dominio para que funcione en todos los subdominios
         // Dejar que Express lo maneje automáticamente
+        path: '/' // Asegurar que la cookie esté disponible en todas las rutas
     },
-    name: 'catalogo.sid' // Nombre personalizado para la cookie
+    name: 'catalogo.sid', // Nombre personalizado para la cookie
+    // En Vercel, asegurar que la cookie se establezca correctamente
+    genid: (req) => {
+        // Generar un ID de sesión único
+        return require('crypto').randomBytes(16).toString('hex');
+    }
 }));
 
 // Configuración de vistas (EJS)
@@ -60,16 +66,21 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const requireAuth = (req, res, next) => {
     // Log detallado para debug
     if (process.env.DEBUG_SESSIONS === 'true' || process.env.NODE_ENV === 'production') {
+        // Extraer la cookie de sesión del header
+        const cookieHeader = req.headers.cookie || '';
+        const sessionCookieMatch = cookieHeader.match(/catalogo\.sid=([^;]+)/);
+        const sessionCookieValue = sessionCookieMatch ? sessionCookieMatch[1] : null;
+        
         console.log('🔐 Verificando autenticación:', {
             path: req.path,
             hasSession: !!req.session,
             authenticated: req.session?.authenticated,
             sessionId: req.sessionID,
             cookie: req.headers.cookie,
+            sessionCookieValue: sessionCookieValue,
+            sessionCookieMatches: sessionCookieValue === req.sessionID,
             sessionKeys: req.session ? Object.keys(req.session) : [],
-            // AGREGAR ESTO:
-            allCookies: req.cookies,
-            setCookieHeader: res.getHeader('Set-Cookie')
+            allCookies: req.cookies
         });
     }
     
