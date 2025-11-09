@@ -400,11 +400,12 @@
                         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
                         
                         // Calcular espaciado para usar todo el ancho disponible
-                        // Usar el 95% del ancho disponible para las barras
-                        const anchoDisponible = chartWidth * 0.95;
-                        // Aumentar el espaciado entre barras multiplicando por un factor
-                        const barSpacing = (anchoDisponible / productivasPorCliente.length) * 1.3;
-                        const barWidth = barSpacing * 0.6; // Mantener el mismo ancho relativo de barras
+                        // Usar el 90% del ancho disponible para las barras (más conservador)
+                        const anchoDisponible = chartWidth * 0.90;
+                        // Calcular el espaciado sin multiplicación extra para que todas las barras quepan
+                        let barSpacing = anchoDisponible / productivasPorCliente.length;
+                        // Reducir el ancho de las barras para que quepan todas
+                        let barWidth = barSpacing * 0.45; // Barras más estrechas para que todas quepan
                         
                         // Limpiar SVG
                         svg.innerHTML = '';
@@ -413,9 +414,23 @@
                         const barColor = 'rgba(52, 168, 83, 0.5)'; // Verde suave
                         
                         // Calcular el ancho real del área de dibujo basado en la última barra
-                        const inicioBarras = margin.left + (chartWidth - anchoDisponible) / 2;
-                        const ultimaBarraX = inicioBarras + (barSpacing * (productivasPorCliente.length - 1)) + barWidth;
-                        const anchoRealGrafico = ultimaBarraX - inicioBarras;
+                        let inicioBarras = margin.left + (chartWidth - anchoDisponible) / 2;
+                        // Calcular la posición de la última barra (centro de la última barra + mitad del ancho)
+                        let ultimaBarraX = inicioBarras + (barSpacing * (productivasPorCliente.length - 1)) + (barSpacing - barWidth) / 2 + barWidth;
+                        let anchoRealGrafico = ultimaBarraX - inicioBarras;
+                        
+                        // Asegurar que no se salga del contenedor
+                        const anchoMaximo = width - margin.left - margin.right;
+                        if (anchoRealGrafico > anchoMaximo) {
+                            // Si se sale, reducir proporcionalmente
+                            const factorReduccion = anchoMaximo / anchoRealGrafico;
+                            barWidth = barWidth * factorReduccion;
+                            barSpacing = barSpacing * factorReduccion;
+                            // Recalcular con los valores ajustados
+                            inicioBarras = margin.left + (chartWidth - (barSpacing * productivasPorCliente.length)) / 2;
+                            ultimaBarraX = inicioBarras + (barSpacing * (productivasPorCliente.length - 1)) + (barSpacing - barWidth) / 2 + barWidth;
+                            anchoRealGrafico = ultimaBarraX - inicioBarras;
+                        }
                         
                         // Eje Y (líneas de referencia)
                         for (let i = 0; i <= 5; i++) {
