@@ -59,7 +59,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Middleware de autenticación
+// Middleware de autenticación JWT (reemplaza el sistema de sesiones)
+const { requireAuthJWT } = require('./middleware/authJWT');
+const requireAuth = requireAuthJWT;
+
+// Middleware de autenticación ANTIGUO (sesiones) - COMENTADO
+/*
 const requireAuth = (req, res, next) => {
     // Log detallado para debug
     if (process.env.DEBUG_SESSIONS === 'true' || process.env.NODE_ENV === 'production') {
@@ -140,6 +145,7 @@ const requireAuth = (req, res, next) => {
     
     res.redirect('/login');
 };
+*/
 
 // Rutas
 const indexRoutes = require('./routes/indexRoutes');
