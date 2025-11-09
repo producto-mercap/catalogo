@@ -92,6 +92,24 @@ const requireAuth = (req, res, next) => {
                 cookieValue: sessionCookieValue,
                 sessionID: req.sessionID
             });
+            
+            // Intentar recuperar la sesión manualmente desde el store
+            if (sessionStore && sessionCookieValue) {
+                sessionStore.get(sessionCookieValue, (err, sessionData) => {
+                    if (err) {
+                        console.error('❌ Error al recuperar sesión del store:', err);
+                    } else if (sessionData) {
+                        console.log('✅ Sesión encontrada en store:', {
+                            sessionID: sessionCookieValue,
+                            hasData: !!sessionData,
+                            authenticated: sessionData.authenticated,
+                            keys: Object.keys(sessionData)
+                        });
+                    } else {
+                        console.warn('⚠️ Sesión NO encontrada en store para sessionID:', sessionCookieValue);
+                    }
+                });
+            }
         }
         
         // Si no hay cookie pero hay sessionID, la sesión se creó sin cookie

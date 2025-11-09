@@ -50,35 +50,9 @@ router.post('/', async (req, res) => {
                 });
             });
             
-            // CRÍTICO: En Vercel, la cookie puede no establecerse automáticamente
-            // Forzar que la cookie se establezca explícitamente
-            const cookieName = 'catalogo.sid';
-            const cookieValue = req.sessionID;
-            const isSecure = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
-            
-            // Establecer la cookie manualmente si no está en los headers
-            const existingCookie = res.getHeader('Set-Cookie');
-            if (!existingCookie || (Array.isArray(existingCookie) && !existingCookie.some(c => c.startsWith(cookieName)))) {
-                const cookieOptions = {
-                    httpOnly: true,
-                    secure: isSecure,
-                    sameSite: 'lax',
-                    maxAge: 24 * 60 * 60 * 1000, // 24 horas
-                    path: '/'
-                };
-                
-                res.cookie(cookieName, cookieValue, cookieOptions);
-                
-                if (process.env.DEBUG_SESSIONS === 'true' || process.env.NODE_ENV === 'production') {
-                    console.log('🍪 Cookie establecida manualmente:', {
-                        cookieName,
-                        cookieValue,
-                        options: cookieOptions
-                    });
-                }
-            }
-            
             // Verificar que la sesión se guardó correctamente
+            // NO establecer la cookie manualmente - express-session lo hace automáticamente
+            // Establecerla manualmente puede interferir con cómo express-session la maneja
             if (process.env.DEBUG_SESSIONS === 'true' || process.env.NODE_ENV === 'production') {
                 const setCookieHeader = res.getHeader('Set-Cookie');
                 console.log('✅ Sesión guardada exitosamente:', {
