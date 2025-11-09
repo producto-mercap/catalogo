@@ -199,8 +199,8 @@
                             <div class="glue-card__content" style="font-size: 16px; color: #202124; margin-bottom: 24px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 500;">
                                 Funcionalidades Productivas
                             </div>
-                            <div id="productivasChartContainer" style="height: 300px; position: relative;">
-                                <svg id="productivasChart" width="100%" height="100%" viewBox="0 0 500 300" style="overflow: visible;">
+                            <div id="productivasChartContainer" style="height: 300px; position: relative; width: 100%;">
+                                <svg id="productivasChart" width="100%" height="100%" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet" style="overflow: visible;">
                                     <!-- Gráfico de barras por cliente se dibuja con JavaScript -->
                                 </svg>
                             </div>
@@ -253,7 +253,7 @@
                                                 <%= index + 1 %>
                                             </div>
                                             <div style="flex: 1; font-size: 14px; color: #202124; font-family: 'Google Sans', 'Roboto', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                <%= (func.titulo || 'Sin título').length > 40 ? (func.titulo || 'Sin título').substring(0, 40) + '...' : (func.titulo || 'Sin título') %>
+                                                <%= (func.titulo || 'Sin título').length > 90 ? (func.titulo || 'Sin título').substring(0, 90) + '...' : (func.titulo || 'Sin título') %>
                                             </div>
                                             <div style="font-size: 18px; font-weight: 500; color: #4285f4; font-family: 'Google Sans', 'Roboto', sans-serif;">
                                                 <%= func.cantidad_clientes %>
@@ -369,18 +369,6 @@
                             rect.onmouseout = function() { this.style.opacity = '1'; };
                             svg.appendChild(rect);
                             
-                            // Valor sobre la barra
-                            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                            text.setAttribute('x', x + barWidth / 2);
-                            text.setAttribute('y', y - 6);
-                            text.setAttribute('text-anchor', 'middle');
-                            text.setAttribute('font-size', '12');
-                            text.setAttribute('fill', '#202124');
-                            text.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
-                            text.setAttribute('font-weight', '500');
-                            text.textContent = dato.cantidad;
-                            svg.appendChild(text);
-                            
                             // Etiqueta del eje X
                             const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                             label.setAttribute('x', x + barWidth / 2);
@@ -399,13 +387,18 @@
                         const svg = document.getElementById('productivasChart');
                         if (!svg || productivasPorCliente.length === 0) return;
                         
-                        const width = 500;
+                        // Usar el ancho completo del contenedor SVG
+                        const svgElement = svg;
+                        const width = svgElement.clientWidth || 500;
                         const height = 300;
-                        const margin = { top: 20, right: 20, bottom: 60, left: 60 };
+                        const margin = { top: 20, right: 20, bottom: 60, left: 40 }; // Reducido margen izquierdo
                         const chartWidth = width - margin.left - margin.right;
                         const chartHeight = height - margin.top - margin.bottom;
-                        const barSpacing = chartWidth / productivasPorCliente.length;
-                        const barWidth = barSpacing * 0.7;
+                        // Aumentar el espaciado entre barras usando un factor de espaciado
+                        const spacingFactor = 1.5; // Factor para aumentar el espacio entre barras
+                        const totalSpacing = chartWidth * spacingFactor;
+                        const barSpacing = totalSpacing / productivasPorCliente.length;
+                        const barWidth = barSpacing * 0.4; // Barras más estrechas para más espacio
                         
                         // Limpiar SVG
                         svg.innerHTML = '';
@@ -443,6 +436,7 @@
                         // Barras
                         productivasPorCliente.forEach((cliente, index) => {
                             const barHeight = (cliente.cantidad_productivas / maxProductivas) * chartHeight;
+                            // Centrar las barras en el espacio disponible, dejando más espacio entre ellas
                             const x = margin.left + (barSpacing * index) + (barSpacing - barWidth) / 2;
                             const y = margin.top + chartHeight - barHeight;
                             
@@ -459,18 +453,6 @@
                             rect.onmouseout = function() { this.style.opacity = '1'; };
                             svg.appendChild(rect);
                             
-                            // Valor sobre la barra
-                            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                            text.setAttribute('x', x + barWidth / 2);
-                            text.setAttribute('y', y - 6);
-                            text.setAttribute('text-anchor', 'middle');
-                            text.setAttribute('font-size', '12');
-                            text.setAttribute('fill', '#202124');
-                            text.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
-                            text.setAttribute('font-weight', '500');
-                            text.textContent = cliente.cantidad_productivas;
-                            svg.appendChild(text);
-                            
                             // Etiqueta del eje X (nombre del cliente)
                             const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                             label.setAttribute('x', x + barWidth / 2);
@@ -479,7 +461,6 @@
                             label.setAttribute('font-size', '11');
                             label.setAttribute('fill', '#5f6368');
                             label.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
-                            label.setAttribute('transform', `rotate(-45 ${x + barWidth / 2} ${height - margin.bottom + 20})`);
                             label.textContent = cliente.nombre;
                             svg.appendChild(label);
                         });
