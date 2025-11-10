@@ -194,7 +194,7 @@
                                     <path d="M7 10l5 5 5-5z"/>
                                 </svg>
                             </div>
-                            <div onclick="ordenar('sponsor')" style="cursor: pointer;" data-sort="sponsor">
+                            <div onclick="ordenar('sponsor')" style="cursor: pointer; text-align: center;" data-sort="sponsor">
                                 Sponsor
                                 <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M7 10l5 5 5-5z"/>
@@ -240,7 +240,7 @@
                                         <% } %>
                                     </div>
                                 </div>
-                                <div class="item-text"><%= (func.seccion || '-').length > 20 ? (func.seccion || '-').substring(0, 20) + '...' : (func.seccion || '-') %></div>
+                                <div class="item-text"><%= func.seccion || '-' %></div>
                                 <div class="item-text"><%= func.sponsor || '-' %></div>
                                 <div class="item-text desktop-only monto-valor">
                                     <% if (func.monto) { %>

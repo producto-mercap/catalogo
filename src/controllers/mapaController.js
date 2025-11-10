@@ -41,9 +41,19 @@ exports.actualizarEstado = async (req, res) => {
             notas: req.body.notas || null
         };
         
+        // Si el estado es null, eliminar la relación en lugar de actualizar
+        if (datos.estado_comercial === null || datos.estado_comercial === '') {
+            const relacionEliminada = await MapaModel.eliminarRelacion(clienteId, funcionalidadId);
+            return res.json({
+                success: true,
+                relacion: relacionEliminada,
+                message: 'Estado eliminado exitosamente'
+            });
+        }
+        
         // Validar estado comercial
-        const estadosValidos = ['productivo', 'interesado', 'rechazado', 'en desarrollo', 'Propuesta enviada', null];
-        if (datos.estado_comercial && !estadosValidos.includes(datos.estado_comercial)) {
+        const estadosValidos = ['productivo', 'interesado', 'rechazado', 'en desarrollo', 'Propuesta enviada'];
+        if (!estadosValidos.includes(datos.estado_comercial)) {
             return res.status(400).json({
                 success: false,
                 error: 'Estado comercial inválido. Valores válidos: productivo, interesado, rechazado, en desarrollo, Propuesta enviada'

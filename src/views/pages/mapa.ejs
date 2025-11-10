@@ -43,19 +43,16 @@
                         <table class="mapa-table" id="mapaTable">
                             <thead>
                                 <tr>
-                                    <th style="min-width: 200px; width: 200px; background: var(--hover-bg); font-weight: 600; font-size: 14px; color: var(--text-primary); padding: 16px 24px; border-bottom: 1px solid var(--border-color); position: sticky; left: 0; z-index: 5; background: var(--hover-bg);">Funcionalidad</th>
+                                    <th style="min-width: 300px; width: 300px; background: var(--hover-bg); font-weight: 600; font-size: 14px; color: var(--text-primary); padding: 16px 24px; border-bottom: 1px solid var(--border-color); position: sticky; left: 0; z-index: 5; background: var(--hover-bg);">Funcionalidad</th>
                                     <% clientes.forEach((cliente, index) => { %>
                                         <th 
                                             class="cliente-header" 
                                             data-cliente-index="<%= index %>"
                                             data-cliente-id="<%= cliente.id %>"
                                             data-cliente-nombre="<%= cliente.nombre %>"
-                                            draggable="true"
-                                            onclick="ordenarPorCliente(<%= index %>)"
-                                            style="min-width: 25px; width: 28px; background: var(--hover-bg); font-weight: 600; font-size: 12px; color: var(--text-primary); padding: 8px 4px; border-bottom: 1px solid var(--border-color); cursor: move; user-select: none; transition: background 0.2s;"
+                                            style="min-width: 25px; width: 28px; background: var(--hover-bg); font-weight: 600; font-size: 12px; color: var(--text-primary); padding: 8px 4px; border-bottom: 1px solid var(--border-color); transition: background 0.2s;"
                                             onmouseover="this.style.background='#e8f0fe'"
-                                            onmouseout="if (!this.classList.contains('sorted')) this.style.background='var(--hover-bg)'"
-                                            title="Arrastrar para reordenar o click para ordenar"
+                                            onmouseout="this.style.background='var(--hover-bg)'"
                                         >
                                             <%= cliente.nombre %>
                                             <span class="sort-indicator" style="display: none; margin-left: 4px; font-size: 10px;">▼</span>
@@ -72,7 +69,7 @@
                                                 <%= (func.titulo || '?').substring(0, 1).toUpperCase() %>
                                             </div>
                                             <div style="font-size: 11px; line-height: 1.3;">
-                                                <%= (func.titulo || 'Sin título').length > 60 ? (func.titulo || 'Sin título').substring(0, 60) + '...' : (func.titulo || 'Sin título') %>
+                                                <%= (func.titulo || 'Sin título').length > 65 ? (func.titulo || 'Sin título').substring(0, 65) + '...' : (func.titulo || 'Sin título') %>
                                             </div>
                                         </div>
                                     </td>
@@ -104,7 +101,7 @@
                                             } else if (estado === 'rechazado') {
                                                 cellStyle = 'background: rgba(255, 205, 210, 0.25); padding: 2px 4px; width: 35px; height: 24px; position: relative; cursor: pointer; text-align: center; color: var(--text-secondary); font-size: 11px;';
                                             } else if (estado === 'Propuesta enviada') {
-                                                cellStyle = 'background: rgba(225, 190, 231, 0.25); padding: 2px 4px; width: 35px; height: 24px; position: relative; cursor: pointer; text-align: center; color: var(--text-secondary); font-size: 11px;';
+                                                cellStyle = 'background: rgba(225, 190, 231, 0.25); padding: 2px 4px; width: 35px; height: 32px; position: relative; cursor: pointer; text-align: center; color: var(--text-secondary); font-size: 11px; line-height: 1.2;';
                                             } else {
                                                 cellStyle = 'background: rgba(245, 245, 245, 0.25); padding: 2px 4px; width: 35px; height: 24px; position: relative; cursor: pointer; text-align: center; color: var(--text-secondary); font-size: 11px;';
                                             }
@@ -119,7 +116,11 @@
                                             data-funcionalidad="<%= func.redmine_id || func.id %>"
                                             data-estado="<%= estado ? textoEstado : '' %>"
                                         >
-                                            <%= estado ? textoEstado : '+' %>
+                                            <% if (estado === 'Propuesta enviada') { %>
+                                                Propuesta<br>enviada
+                                            <% } else { %>
+                                                <%= estado ? textoEstado : '+' %>
+                                            <% } %>
                                             <!-- Dropdown de estados -->
                                             <div id="dropdown-estado-<%= cliente.id %>-<%= func.redmine_id || func.id %>" 
                                                  class="dropdown-estado"
@@ -164,7 +165,7 @@
                             <div class="glue-card__content" style="font-size: 14px; color: #5f6368; margin-bottom: 16px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 400;">
                                 Total Clientes
                             </div>
-                            <div style="font-size: 48px; font-weight: 400; color: #202124; font-family: 'Google Sans', 'Roboto', sans-serif; line-height: 1.2;">
+                            <div style="font-size: 48px; font-weight: 400; color: #34a853; font-family: 'Google Sans', 'Roboto', sans-serif; line-height: 1.2;">
                                 <%= clientes.length %>
                             </div>
                         </div>
@@ -174,14 +175,14 @@
                             <div class="glue-card__content" style="font-size: 14px; color: #5f6368; margin-bottom: 16px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 400;">
                                 Total Funcionalidades
                             </div>
-                            <div style="font-size: 48px; font-weight: 400; color: #202124; font-family: 'Google Sans', 'Roboto', sans-serif; line-height: 1.2;">
+                            <div style="font-size: 48px; font-weight: 400; color: #34a853; font-family: 'Google Sans', 'Roboto', sans-serif; line-height: 1.2;">
                                 <%= funcionalidades.length %>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Gráficos -->
-                    <div style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 24px;">
+                    <div style="display: grid; grid-template-columns: 1.5fr 2.5fr; gap: 24px;">
                         <!-- Gráfico de Barras - Estados Comerciales -->
                         <div class="glue-card" style="background: white; border: 1px solid #dadce0; border-radius: 8px; padding: 24px;">
                             <div class="glue-card__content" style="font-size: 16px; color: #202124; margin-bottom: 24px; font-family: 'Google Sans', 'Roboto', sans-serif; font-weight: 500;">
@@ -228,7 +229,7 @@
                                                 <%= cliente.cantidad_productivas %>
                                             </div>
                                             <div style="font-size: 12px; color: #5f6368; font-family: 'Google Sans', 'Roboto', sans-serif;">
-                                                funcionalidades
+                                                Funcionalidades Productivas
                                             </div>
                                         </div>
                                     <% }) %>
@@ -252,8 +253,8 @@
                                             <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(66, 133, 244, 0.1); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #4285f4; font-family: 'Google Sans', 'Roboto', sans-serif; flex-shrink: 0;">
                                                 <%= index + 1 %>
                                             </div>
-                                            <div style="flex: 1; font-size: 14px; color: #202124; font-family: 'Google Sans', 'Roboto', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                <%= (func.titulo || 'Sin título').length > 90 ? (func.titulo || 'Sin título').substring(0, 90) + '...' : (func.titulo || 'Sin título') %>
+                                            <div style="flex: 1; font-size: 14px; color: #5f6368; font-family: 'Google Sans', 'Roboto', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                <%= (func.titulo || 'Sin título').length > 65 ? (func.titulo || 'Sin título').substring(0, 65) + '...' : (func.titulo || 'Sin título') %>
                                             </div>
                                             <div style="font-size: 18px; font-weight: 500; color: #4285f4; font-family: 'Google Sans', 'Roboto', sans-serif;">
                                                 <%= func.cantidad_clientes %>
@@ -314,7 +315,7 @@
                         
                         const width = 400;
                         const height = 300;
-                        const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+                        const margin = { top: 20, right: 20, bottom: 60, left: 50 }; // Mismo bottom que Funcionalidades Productivas para alinear ejes X
                         const chartWidth = width - margin.left - margin.right;
                         const chartHeight = height - margin.top - margin.bottom;
                         const barWidth = chartWidth / datosEstados.length * 0.6;
@@ -370,15 +371,40 @@
                             svg.appendChild(rect);
                             
                             // Etiqueta del eje X
-                            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                            label.setAttribute('x', x + barWidth / 2);
-                            label.setAttribute('y', height - margin.bottom + 20);
-                            label.setAttribute('text-anchor', 'middle');
-                            label.setAttribute('font-size', '11');
-                            label.setAttribute('fill', '#5f6368');
-                            label.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
-                            label.textContent = dato.nombre;
-                            svg.appendChild(label);
+                            // Si es "Propuesta enviada", dividir en 2 líneas
+                            if (dato.nombre === 'Propuesta enviada') {
+                                // Primera línea: "Propuesta" - alineada con los otros labels
+                                const label1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                                label1.setAttribute('x', x + barWidth / 2);
+                                label1.setAttribute('y', height - margin.bottom + 20);
+                                label1.setAttribute('text-anchor', 'middle');
+                                label1.setAttribute('font-size', '11');
+                                label1.setAttribute('fill', '#5f6368');
+                                label1.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                                label1.textContent = 'Propuesta';
+                                svg.appendChild(label1);
+                                
+                                // Segunda línea: "enviada" - debajo de "Propuesta"
+                                const label2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                                label2.setAttribute('x', x + barWidth / 2);
+                                label2.setAttribute('y', height - margin.bottom + 34);
+                                label2.setAttribute('text-anchor', 'middle');
+                                label2.setAttribute('font-size', '11');
+                                label2.setAttribute('fill', '#5f6368');
+                                label2.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                                label2.textContent = 'enviada';
+                                svg.appendChild(label2);
+                            } else {
+                                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                                label.setAttribute('x', x + barWidth / 2);
+                                label.setAttribute('y', height - margin.bottom + 20);
+                                label.setAttribute('text-anchor', 'middle');
+                                label.setAttribute('font-size', '11');
+                                label.setAttribute('fill', '#5f6368');
+                                label.setAttribute('font-family', 'Google Sans, Roboto, sans-serif');
+                                label.textContent = dato.nombre;
+                                svg.appendChild(label);
+                            }
                         });
                     }
                     
@@ -550,53 +576,7 @@
             }
         }
         
-        // Ordenar por cliente
-        function ordenarPorCliente(clienteIndex) {
-            const tbody = document.querySelector('#mapaTable tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            // Determinar dirección de ordenamiento
-            const header = document.querySelector(`.cliente-header[data-cliente-index="${clienteIndex}"]`);
-            if (ordenActual === clienteIndex) {
-                ordenDireccion = ordenDireccion === 'asc' ? 'desc' : 'asc';
-            } else {
-                ordenDireccion = 'asc';
-                ordenActual = clienteIndex;
-            }
-            
-            // Limpiar indicadores anteriores
-            document.querySelectorAll('.cliente-header').forEach(h => {
-                h.classList.remove('sorted');
-                h.querySelector('.sort-indicator').style.display = 'none';
-            });
-            
-            // Marcar header actual
-            header.classList.add('sorted');
-            const indicator = header.querySelector('.sort-indicator');
-            indicator.style.display = 'inline';
-            indicator.textContent = ordenDireccion === 'asc' ? '▲' : '▼';
-            
-            // Ordenar filas según el estado en la columna del cliente
-            rows.sort((a, b) => {
-                const cellA = a.querySelectorAll('td')[clienteIndex + 1]; // +1 porque la primera columna es funcionalidad
-                const cellB = b.querySelectorAll('td')[clienteIndex + 1];
-                
-                const estadoA = cellA.getAttribute('data-estado') || '';
-                const estadoB = cellB.getAttribute('data-estado') || '';
-                
-                // Ordenar: primero las que tienen estado, luego las vacías
-                if (estadoA && !estadoB) return ordenDireccion === 'asc' ? -1 : 1;
-                if (!estadoA && estadoB) return ordenDireccion === 'asc' ? 1 : -1;
-                if (!estadoA && !estadoB) return 0;
-                
-                // Si ambas tienen estado, ordenar alfabéticamente
-                const comparacion = estadoA.localeCompare(estadoB);
-                return ordenDireccion === 'asc' ? comparacion : -comparacion;
-            });
-            
-            // Reordenar filas en el DOM
-            rows.forEach(row => tbody.appendChild(row));
-        }
+        // Función de ordenar por cliente eliminada - ya no se usa
         
         // Actualizar flechas al hacer scroll
         document.addEventListener('DOMContentLoaded', () => {
@@ -695,124 +675,19 @@
             }
         });
         
-        // Drag and Drop para reordenar columnas
-        let draggedHeader = null;
-        let draggedIndex = null;
-        
-        function inicializarDragAndDrop() {
-            document.querySelectorAll('.cliente-header').forEach((header, index) => {
-            header.addEventListener('dragstart', (e) => {
-                draggedHeader = header;
-                draggedIndex = index;
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', header.innerHTML);
-                header.style.opacity = '0.5';
-            });
-            
-            header.addEventListener('dragend', (e) => {
-                header.style.opacity = '1';
-                document.querySelectorAll('.cliente-header').forEach(h => {
-                    h.style.borderLeft = '';
-                    h.style.borderRight = '';
-                });
-            });
-            
-            header.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                
-                if (draggedHeader && draggedHeader !== header) {
-                    const rect = header.getBoundingClientRect();
-                    const midpoint = rect.left + rect.width / 2;
-                    const mouseX = e.clientX;
-                    
-                    // Mostrar indicador visual
-                    document.querySelectorAll('.cliente-header').forEach(h => {
-                        h.style.borderLeft = '';
-                        h.style.borderRight = '';
-                    });
-                    
-                    if (mouseX < midpoint) {
-                        header.style.borderLeft = '3px solid var(--primary-color)';
-                    } else {
-                        header.style.borderRight = '3px solid var(--primary-color)';
-                    }
-                }
-            });
-            
-            header.addEventListener('drop', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (draggedHeader && draggedHeader !== header) {
-                    const targetIndex = Array.from(header.parentNode.children).indexOf(header);
-                    const draggedIndex = Array.from(draggedHeader.parentNode.children).indexOf(draggedHeader);
-                    
-                    // Mover header
-                    if (draggedIndex < targetIndex) {
-                        header.parentNode.insertBefore(draggedHeader, header.nextSibling);
-                    } else {
-                        header.parentNode.insertBefore(draggedHeader, header);
-                    }
-                    
-                    // Mover todas las celdas de la columna correspondiente
-                    const tbody = document.querySelector('#mapaTable tbody');
-                    const rows = Array.from(tbody.querySelectorAll('tr'));
-                    
-                    rows.forEach(row => {
-                        const cells = Array.from(row.querySelectorAll('td'));
-                        const draggedCell = cells[draggedIndex + 1]; // +1 porque la primera columna es funcionalidad
-                        const targetCell = cells[targetIndex + 1];
-                        
-                        if (draggedIndex < targetIndex) {
-                            targetCell.parentNode.insertBefore(draggedCell, targetCell.nextSibling);
-                        } else {
-                            targetCell.parentNode.insertBefore(draggedCell, targetCell);
-                        }
-                    });
-                    
-                    // Actualizar data-cliente-index en todos los headers
-                    document.querySelectorAll('.cliente-header').forEach((h, idx) => {
-                        h.setAttribute('data-cliente-index', idx);
-                    });
-                }
-                
-                // Limpiar indicadores visuales
-                document.querySelectorAll('.cliente-header').forEach(h => {
-                    h.style.borderLeft = '';
-                    h.style.borderRight = '';
-                });
-            });
-            
-            header.addEventListener('dragleave', (e) => {
-                if (!header.contains(e.relatedTarget)) {
-                    header.style.borderLeft = '';
-                    header.style.borderRight = '';
-                }
-            });
-            });
-        }
-        
-        // Inicializar drag and drop cuando el DOM esté listo
+        // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', () => {
-            inicializarDragAndDrop();
-            
-            // Prevenir que el sidebar se contraiga/expanda durante la carga en mapa
-            // Esperar a que main.js termine de inicializar el sidebar y luego mantener el estado
-            setTimeout(() => {
-                const sidebar = document.getElementById('sidebar');
-                const toggle = document.querySelector('.sidebar-toggle');
-                if (sidebar && toggle) {
-                    // Capturar el estado después de que main.js haya inicializado
-                    const estadoFinal = sidebar.classList.contains('collapsed');
-                    // Asegurar que el toggle esté en la posición correcta
-                    if (estadoFinal) {
-                        toggle.style.left = '48px';
-                    } else {
-                        toggle.style.left = 'calc(var(--sidebar-width) - 16px)';
-                    }
+            // Contraer sidebar en /clientes (mapa)
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.sidebar-toggle');
+            if (sidebar && toggle) {
+                // Contraer el sidebar en la página de clientes
+                if (!sidebar.classList.contains('collapsed')) {
+                    sidebar.classList.add('collapsed');
+                    toggle.style.left = '48px';
+                    localStorage.setItem('sidebarCollapsed', 'true');
                 }
-            }, 300);
+            }
         });
         
         // Funcionalidad de resize de columnas
