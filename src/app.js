@@ -51,6 +51,10 @@ app.use(session({
 // Configuración de vistas (EJS)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+// Deshabilitar cache de vistas en desarrollo
+if (process.env.NODE_ENV !== 'production') {
+    app.set('view cache', false);
+}
 
 // Middleware para archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
@@ -165,7 +169,7 @@ app.use('/', requireAuth, indexRoutes);
 app.use('/funcionalidades', requireAuth, funcionalidadesRoutes);
 app.use('/score', requireAuth, scoreRoutes);
 app.use('/mapa', requireAuth, mapaRoutes);
-app.use('/desarrollos-internos', requireAuth, desarrollosRoutes);
+app.use('/backlog-proyectos', requireAuth, desarrollosRoutes);
 app.use('/api', requireAuth, apiRoutes);
 app.use('/api/redmine', requireAuth, redmineRoutes);
 

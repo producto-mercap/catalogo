@@ -194,7 +194,7 @@
                                     <path d="M7 10l5 5 5-5z"/>
                                 </svg>
                             </div>
-                            <div onclick="ordenar('sponsor')" style="cursor: pointer; text-align: center;" data-sort="sponsor">
+                            <div onclick="ordenar('sponsor')" style="cursor: pointer;" data-sort="sponsor">
                                 Sponsor
                                 <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M7 10l5 5 5-5z"/>
@@ -260,11 +260,11 @@
                                 </div>
                                 <div>
                                     <% 
-                                    let score = func.score_total || func.score_calculado || 0;
+                                    let score = func.score_calculado || func.score_total || 0;
                                     score = parseFloat(score) || 0;
                                     let scoreClass = 'score-low';
-                                    if (score >= 4) scoreClass = 'score-high';
-                                    else if (score >= 2.5) scoreClass = 'score-medium';
+                                    if (score > 6.50) scoreClass = 'score-high';
+                                    else if (score > 4) scoreClass = 'score-medium';
                                     %>
                                     <span class="score-badge <%= scoreClass %>">
                                         <%= score.toFixed(1) %>
@@ -311,11 +311,11 @@
                                     <% } %>
                                     
                                     <% 
-                                    let score = func.score_total || func.score_calculado || 0;
+                                    let score = func.score_calculado || func.score_total || 0;
                                     score = parseFloat(score) || 0;
                                     let scoreClass = 'score-low';
-                                    if (score >= 4) scoreClass = 'score-high';
-                                    else if (score >= 2.5) scoreClass = 'score-medium';
+                                    if (score > 6.50) scoreClass = 'score-high';
+                                    else if (score > 4) scoreClass = 'score-medium';
                                     %>
                                     <span class="score-badge <%= scoreClass %>">
                                         ⭐ <%= score.toFixed(1) %>

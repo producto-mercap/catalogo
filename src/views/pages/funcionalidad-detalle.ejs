@@ -49,11 +49,11 @@
                                         <% } %>
                                         
                                         <% 
-                                        let score = funcionalidad.score_total || funcionalidad.score_calculado || 0;
+                                        let score = funcionalidad.score_calculado || funcionalidad.score_total || 0;
                                         score = parseFloat(score) || 0;
                                         let scoreClass = 'score-low';
-                                        if (score >= 4) scoreClass = 'score-high';
-                                        else if (score >= 2.5) scoreClass = 'score-medium';
+                                        if (score > 6.50) scoreClass = 'score-high';
+                                        else if (score > 4) scoreClass = 'score-medium';
                                         %>
                                         <span class="score-badge <%= scoreClass %>">
                                             ⭐ Score: <%= score.toFixed(1) %>
@@ -327,14 +327,17 @@
                 
                 if (!data.success) {
                     console.error('Error al guardar:', data.error || 'Error desconocido');
+                    alert('Error al guardar: ' + (data.error || 'Error desconocido'));
                     return;
                 }
+                
+                // Redirigir a /funcionalidades después de guardar exitosamente
+                window.location.href = '/funcionalidades';
             } catch (error) {
                 console.error('Error al guardar:', error);
+                alert('Error al guardar: ' + error.message);
                 return;
             }
-            
-            window.location.reload();
         }
     </script>
 </body>

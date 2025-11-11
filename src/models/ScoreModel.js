@@ -184,8 +184,8 @@ class ScoreModel {
         const sumaPesosNegativos = peso_esfuerzo + peso_incertidumbre + peso_riesgo;
         const promedioNegativos = sumaPesosNegativos > 0 ? sumaPonderadaNegativos / (sumaPesosNegativos / 100) : 0;
         
-        // Score = promedio positivos - (promedio negativos × 0.5)
-        const score = promedioPositivos - (promedioNegativos * 0.5);
+        // Score = promedio positivos - (promedio negativos × 0.25)
+        const score = promedioPositivos - (promedioNegativos * 0.25);
         return parseFloat(score.toFixed(2));
     }
 

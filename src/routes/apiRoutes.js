@@ -4,6 +4,8 @@ const FuncionalidadModel = require('../models/FuncionalidadModel');
 const ClienteModel = require('../models/ClienteModel');
 const ScoreModel = require('../models/ScoreModel');
 const MapaModel = require('../models/MapaModel');
+const BacklogProyectosModel = require('../models/BacklogProyectosModel');
+const ScoreBacklogModel = require('../models/ScoreBacklogModel');
 
 /**
  * API de funcionalidades
@@ -135,6 +137,53 @@ router.get('/estadisticas', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Error al obtener estadísticas'
+        });
+    }
+});
+
+/**
+ * API de backlog proyectos
+ */
+router.get('/backlog-proyectos', async (req, res) => {
+    try {
+        const filtros = {
+            busqueda: req.query.busqueda || '',
+            seccion: req.query.seccion || '',
+            orden: req.query.orden || 'created_at',
+            direccion: req.query.direccion || 'desc'
+        };
+        
+        const proyectos = await BacklogProyectosModel.obtenerTodas(filtros);
+        
+        res.json({
+            success: true,
+            proyectos
+        });
+    } catch (error) {
+        console.error('Error en API backlog proyectos:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener proyectos del backlog'
+        });
+    }
+});
+
+/**
+ * API de ranking de scores de backlog
+ */
+router.get('/backlog-proyectos/ranking', async (req, res) => {
+    try {
+        const ranking = await ScoreBacklogModel.obtenerRanking();
+        
+        res.json({
+            success: true,
+            ranking
+        });
+    } catch (error) {
+        console.error('Error en API ranking backlog:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener ranking'
         });
     }
 });

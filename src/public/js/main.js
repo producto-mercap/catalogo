@@ -471,8 +471,8 @@ class ScoreCalculator {
         const promedioPositivos = sumaPesosPositivos > 0 ? sumaPonderadaPositivos / (sumaPesosPositivos / 100) : 0;
         const promedioNegativos = sumaPesosNegativos > 0 ? sumaPonderadaNegativos / (sumaPesosNegativos / 100) : 0;
         
-        // Score = promedio positivos - (promedio negativos × 0.5)
-        const score = promedioPositivos - (promedioNegativos * 0.5);
+        // Score = promedio positivos - (promedio negativos × 0.25)
+        const score = promedioPositivos - (promedioNegativos * 0.25);
         
         // Actualizar display del score
         const scoreDisplay = document.getElementById('scoreTotal');
@@ -788,8 +788,8 @@ function formatDate(dateString) {
 
 // Get color de score
 function getScoreColor(score) {
-    if (score >= 4) return 'score-high';
-    if (score >= 2.5) return 'score-medium';
+    if (score > 6.50) return 'score-high';
+    if (score > 4) return 'score-medium';
     return 'score-low';
 }
 

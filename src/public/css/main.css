@@ -651,7 +651,7 @@ select.btn:focus {
 
 .list-header {
     display: grid;
-    grid-template-columns: 2fr auto 100px 100px 120px 80px;
+    grid-template-columns: 2fr 150px 100px 100px 120px 80px;
     gap: 12px;
     padding: 16px 24px;
     background: var(--hover-bg);
@@ -667,6 +667,13 @@ select.btn:focus {
     gap: 4px;
     user-select: none;
     padding: 0;
+}
+
+/* Headers centrados para sección y sponsor */
+.list-header > div:nth-child(2),
+.list-header > div:nth-child(3) {
+    justify-content: center;
+    text-align: center;
 }
 
 .sort-icon {
@@ -688,7 +695,7 @@ select.btn:focus {
 
 .list-item {
     display: grid;
-    grid-template-columns: 2fr auto 100px 100px 120px 80px;
+    grid-template-columns: 2fr 150px 100px 100px 120px 80px;
     gap: 12px;
     padding: 16px 24px;
     border-bottom: 1px solid var(--border-color);
@@ -734,12 +741,15 @@ select.btn:focus {
     white-space: nowrap;
 }
 
-/* Columna sección - sin límite de ancho, se ajusta al contenido */
+/* Columna sección - ancho fijo, centrado */
 .list-item > .item-text:nth-child(2) {
     font-size: 12px;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    width: 150px;
+    max-width: 150px;
 }
 
 /* Columna sponsor centrada */
