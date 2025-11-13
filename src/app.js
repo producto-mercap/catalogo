@@ -190,74 +190,14 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Sincronización con Redmine al iniciar el servidor
-// ⚠️ Solo se ejecuta UNA VEZ al levantar el servidor
-let inicializacionEjecutada = false; // Flag para evitar ejecución múltiple
-
-async function inicializarApp() {
-    // Evitar ejecución múltiple (importante en Vercel serverless)
-    if (inicializacionEjecutada) {
-        return;
-    }
-    inicializacionEjecutada = true;
-    
-    // En producción (Vercel), NO sincronizar automáticamente
-    // La sincronización debe hacerse manualmente vía API
-    if (process.env.NODE_ENV === 'production') {
-        // Solo mostrar el mensaje UNA VEZ al cargar el módulo por primera vez
-        // No hacer nada más - la sincronización se hace manualmente
-        return;
-    }
-
-    // Solo en desarrollo: verificar si las credenciales de Redmine están configuradas
-    if (!process.env.REDMINE_TOKEN) {
-        console.log('⚠️ REDMINE_TOKEN no configurado - sincronización omitida');
-        console.log('   Configura REDMINE_TOKEN en .env para habilitar la sincronización');
-        return;
-    }
-
-    try {
-        const sincronizacionService = require('./services/sincronizacionService');
-        
-        console.log('\n🚀 Iniciando sincronización automática con Redmine...\n');
-        
-        // Obtener límite desde variable de entorno (útil para pruebas)
-        const syncLimit = process.env.REDMINE_SYNC_LIMIT ? parseInt(process.env.REDMINE_SYNC_LIMIT) : null;
-        
-        // Sincronizar proyecto principal filtrando solo Epics (tracker_id = 19)
-        // Si falla, intentará sin filtro
-        let resultado;
-        try {
-            resultado = await sincronizacionService.sincronizarRedmine('ut-bancor', '19', syncLimit);
-        } catch (error) {
-            console.log('⚠️ Error al sincronizar con tracker_id=19, intentando sin filtro...');
-            resultado = await sincronizacionService.sincronizarRedmine('ut-bancor', null, syncLimit);
-        }
-        
-        if (resultado.success) {
-            console.log('✅ Sincronización inicial completada');
-        } else {
-            console.log('⚠️ Sincronización inicial falló:', resultado.message);
-        }
-    } catch (error) {
-        console.error('❌ Error en sincronización inicial:', error.message);
-    }
-}
-
 // Iniciar servidor solo en desarrollo (Vercel maneja producción)
 if (process.env.NODE_ENV !== 'production') {
     const PORT = process.env.PORT || 3000;
-    app.listen(PORT, async () => {
+    app.listen(PORT, () => {
         console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
         console.log(`📁 Entorno: ${process.env.NODE_ENV || 'development'}`);
-        
-        // Ejecutar sincronización inicial SOLO en desarrollo
-        await inicializarApp();
+        console.log(`ℹ️  La sincronización con Redmine debe hacerse manualmente desde la UI`);
     });
-} else {
-    // En producción (Vercel), NO ejecutar sincronización automática
-    // El mensaje informativo se removió para evitar logs innecesarios
-    // La sincronización debe hacerse manualmente vía: POST /api/redmine/sincronizar
 }
 
 // Exportar app para Vercel (serverless)
