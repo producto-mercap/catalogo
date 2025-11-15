@@ -1,5 +1,7 @@
 const ScoreModel = require('../models/ScoreModel');
+const ScoreBacklogModel = require('../models/ScoreBacklogModel');
 const FuncionalidadModel = require('../models/FuncionalidadModel');
+const BacklogProyectosModel = require('../models/BacklogProyectosModel');
 
 /**
  * Renderizar página de score
@@ -25,26 +27,41 @@ exports.index = async (req, res) => {
 };
 
 /**
- * Renderizar calculadora de score para una funcionalidad
+ * Renderizar calculadora de score para una funcionalidad o proyecto de backlog
+ * Reutiliza la misma lógica para ambos casos
  */
 exports.calculadora = async (req, res) => {
     try {
         const { id } = req.params;
-        const funcionalidad = await FuncionalidadModel.obtenerPorId(id);
         
-        if (!funcionalidad) {
+        // Intentar obtener como funcionalidad primero
+        let item = await FuncionalidadModel.obtenerPorId(id);
+        let score = null;
+        let tipo = 'funcionalidad';
+        
+        if (item) {
+            score = await ScoreModel.obtenerPorFuncionalidad(id);
+        } else {
+            // Si no es funcionalidad, intentar como proyecto de backlog
+            item = await BacklogProyectosModel.obtenerPorId(id);
+            if (item) {
+                score = await ScoreBacklogModel.obtenerPorFuncionalidad(id);
+                tipo = 'backlog';
+            }
+        }
+        
+        if (!item) {
             return res.status(404).render('pages/404', {
-                title: 'Funcionalidad no encontrada'
+                title: 'Item no encontrado'
             });
         }
         
-        const score = await ScoreModel.obtenerPorFuncionalidad(id);
-        
         res.render('pages/score-calculadora', {
-            title: `Score: ${funcionalidad.titulo}`,
-            funcionalidad,
+            title: `Score: ${item.titulo}`,
+            funcionalidad: item, // Mantener nombre para compatibilidad con la vista
             score,
-            activeMenu: 'score'
+            tipo,
+            activeMenu: tipo === 'backlog' ? 'backlog-proyectos' : 'score'
         });
     } catch (error) {
         console.error('Error al cargar calculadora:', error);
@@ -56,12 +73,25 @@ exports.calculadora = async (req, res) => {
 };
 
 /**
- * Actualizar score de funcionalidad
+ * Actualizar score de funcionalidad o proyecto de backlog
+ * Reutiliza la misma lógica para ambos casos
  */
 exports.actualizar = async (req, res) => {
     try {
         const { id } = req.params;
         
+        // Determinar si es funcionalidad o backlog primero
+        let funcionalidad = await FuncionalidadModel.obtenerPorId(id);
+        let esBacklog = false;
+        
+        if (!funcionalidad) {
+            const proyecto = await BacklogProyectosModel.obtenerPorId(id);
+            if (proyecto) {
+                esBacklog = true;
+            }
+        }
+        
+        // Construir criterios según el tipo
         const criterios = {
             facturacion: parseInt(req.body.facturacion) || 0,
             facturacion_potencial: parseInt(req.body.facturacion_potencial) || 0,
@@ -70,6 +100,11 @@ exports.actualizar = async (req, res) => {
             incertidumbre: parseInt(req.body.incertidumbre) || 0,
             riesgo: parseInt(req.body.riesgo) || 0
         };
+        
+        // Agregar origen solo para backlog
+        if (esBacklog) {
+            criterios.origen = parseInt(req.body.origen) || 0;
+        }
         
         // Validar que los valores estén en el rango 0-10
         for (const [key, value] of Object.entries(criterios)) {
@@ -81,7 +116,16 @@ exports.actualizar = async (req, res) => {
             }
         }
         
-        const score = await ScoreModel.actualizar(id, criterios);
+        // NO actualizar pesos al guardar score - los pesos se mantienen como están en la BD
+        // Solo actualizamos los criterios (valores 0-10)
+        
+        let score = null;
+        
+        if (funcionalidad) {
+            score = await ScoreModel.actualizar(id, criterios);
+        } else if (esBacklog) {
+            score = await ScoreBacklogModel.actualizar(id, criterios);
+        }
         
         if (!score) {
             return res.status(404).json({
@@ -105,7 +149,7 @@ exports.actualizar = async (req, res) => {
 };
 
 /**
- * Actualizar pesos de criterios
+ * Actualizar pesos de criterios (funcionalidad o backlog)
  */
 exports.actualizarPesos = async (req, res) => {
     try {
@@ -121,7 +165,19 @@ exports.actualizarPesos = async (req, res) => {
             peso_riesgo: parseFloat(req.body.peso_riesgo) || 30.00
         };
         
-        const score = await ScoreModel.actualizarPesos(id, pesos);
+        // Determinar si es funcionalidad o backlog
+        let funcionalidad = await FuncionalidadModel.obtenerPorId(id);
+        let score = null;
+        
+        if (funcionalidad) {
+            score = await ScoreModel.actualizarPesos(id, pesos);
+        } else {
+            // Intentar como proyecto de backlog
+            const proyecto = await BacklogProyectosModel.obtenerPorId(id);
+            if (proyecto) {
+                score = await ScoreBacklogModel.actualizarPesos(id, pesos);
+            }
+        }
         
         if (!score) {
             return res.status(404).json({
@@ -146,6 +202,8 @@ exports.actualizarPesos = async (req, res) => {
 
 /**
  * Calcular preview de score (sin guardar)
+ * Funciona tanto para funcionalidades como para backlog
+ * USA LA MISMA LÓGICA PARA AMBOS (ignora 'origen' en el cálculo)
  */
 exports.calcularPreview = async (req, res) => {
     try {
@@ -167,6 +225,7 @@ exports.calcularPreview = async (req, res) => {
             peso_riesgo: parseFloat(req.body.peso_riesgo) || 30.00
         };
         
+        // Usar ScoreModel.calcularScore (ambos modelos ahora usan la misma lógica)
         const scoreCalculado = ScoreModel.calcularScore(criterios, pesos);
         
         res.json({

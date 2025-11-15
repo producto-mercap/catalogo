@@ -29,13 +29,12 @@ function validarCredenciales() {
 async function obtenerIssues(options = {}) {
     validarCredenciales();
 
-    const {
-        project_id = process.env.REDMINE_DEFAULT_PROJECT || 'ut-bancor',
-        status_id = '*',
-        limit = 15,
-        tracker_id = null, // Opcional: si no se especifica, no filtra por tracker
-        offset = 0
-    } = options;
+    // Si project_id es null o undefined, usar el valor por defecto
+    const project_id = options.project_id || process.env.REDMINE_DEFAULT_PROJECT || 'ut-bancor';
+    const status_id = options.status_id || '*';
+    const limit = options.limit || 15;
+    const tracker_id = options.tracker_id || null; // Opcional: si no se especifica, no filtra por tracker
+    const offset = options.offset || 0;
 
     try {
         const params = new URLSearchParams({
@@ -98,7 +97,9 @@ async function obtenerIssues(options = {}) {
  * @param {number} maxTotal - Límite máximo de issues a obtener (null = sin límite)
  * @returns {Promise<Array>} - Array de todos los issues (limitado por maxTotal)
  */
-async function obtenerTodosLosIssues(project_id = process.env.REDMINE_DEFAULT_PROJECT || 'ut-bancor', tracker_id = null, maxTotal = null) {
+async function obtenerTodosLosIssues(project_id = null, tracker_id = null, maxTotal = null) {
+    // Si project_id es null o undefined, usar el valor por defecto
+    project_id = project_id || process.env.REDMINE_DEFAULT_PROJECT || 'ut-bancor';
     // Usar el límite por request desde la variable de entorno o default
     const limitPorRequest = parseInt(process.env.REDMINE_LIMIT_PER_REQUEST) || 100;
     let offset = 0;
@@ -203,6 +204,10 @@ function parsearSponsor(proyecto) {
 function mapearIssue(issue) {
     const proyectoCompleto = issue.project?.name || 'Sin proyecto';
     
+    // Extraer custom fields
+    const customFields = issue.custom_fields || [];
+    const fechaRealFinalizacion = customFields.find(cf => cf.id === 15)?.value || null;
+    
     return {
         // ID del issue (único e inmutable)
         redmine_id: issue.id,
@@ -210,7 +215,10 @@ function mapearIssue(issue) {
         // Datos básicos de Redmine (no editables)
         titulo: issue.subject || 'Sin título',
         proyecto: parsearSponsor(proyectoCompleto), // Sponsor parseado
-        fecha_creacion: issue.created_on || null
+        proyecto_completo: proyectoCompleto, // Nombre completo del proyecto
+        fecha_creacion: issue.created_on || null,
+        fecha_real_finalizacion: fechaRealFinalizacion, // Custom field id 15
+        total_spent_hours: issue.total_spent_hours || null // Horas dedicadas
     };
 }
 
@@ -221,13 +229,22 @@ function mapearIssue(issue) {
  * @param {number} maxTotal - Límite máximo de issues a obtener (null = sin límite)
  * @returns {Promise<Array>} - Array de issues mapeados
  */
-async function obtenerIssuesMapeados(project_id = process.env.REDMINE_DEFAULT_PROJECT || 'ut-bancor', tracker_id = null, maxTotal = null) {
+async function obtenerIssuesMapeados(project_id = null, tracker_id = null, maxTotal = null) {
+    // Si project_id es null o undefined, usar el valor por defecto
+    project_id = project_id || process.env.REDMINE_DEFAULT_PROJECT || 'ut-bancor';
     try {
         // Si hay variable de entorno REDMINE_SYNC_LIMIT, usarla
         const limitFromEnv = process.env.REDMINE_SYNC_LIMIT ? parseInt(process.env.REDMINE_SYNC_LIMIT) : null;
         const limitFinal = maxTotal || limitFromEnv;
+
+        // Log de filtros utilizados
+        console.log('📋 Filtros aplicados en la consulta a Redmine:');
+        console.log(`   - Project ID: ${project_id}`);
+        console.log(`   - Tracker ID: ${tracker_id || 'todos'}`);
+        console.log(`   - Límite: ${limitFinal || 'sin límite'}`);
         
         const issues = await obtenerTodosLosIssues(project_id, tracker_id, limitFinal);
+        
         const issuesMapeados = issues.map(mapearIssue);
         
         console.log(`✅ Issues mapeados: ${issuesMapeados.length}`);
@@ -235,6 +252,218 @@ async function obtenerIssuesMapeados(project_id = process.env.REDMINE_DEFAULT_PR
         return issuesMapeados;
     } catch (error) {
         console.error('❌ Error al mapear issues:', error.message);
+        throw error;
+    }
+}
+
+/**
+ * Obtener project_id de Redmine por nombre del proyecto
+ * @param {string} projectName - Nombre del proyecto (ej: "UT Mercap | Proyecto Genérico")
+ * @returns {Promise<string|null>} - ID del proyecto (identifier) o null si no se encuentra
+ */
+async function obtenerProjectIdPorNombre(projectName) {
+    validarCredenciales();
+    
+    try {
+        const limitPorRequest = 100;
+        let offset = 0;
+        let allProjects = [];
+        let hasMore = true;
+        
+        console.log(`🔍 Buscando proyecto por nombre: "${projectName}"`);
+        
+        // Buscar en todas las páginas si es necesario
+        while (hasMore) {
+            const params = new URLSearchParams({
+                limit: limitPorRequest.toString(),
+                offset: offset.toString(),
+                key: REDMINE_TOKEN
+            });
+            
+            const url = `${REDMINE_URL}/projects.json?${params.toString()}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'User-Agent': 'Catalogo-NodeJS/1.0'
+                }
+            });
+            
+            if (!response.ok) {
+                console.error(`❌ Error al buscar proyecto: ${response.status}`);
+                return null;
+            }
+            
+            const data = await response.json();
+            const projects = data.projects || [];
+            allProjects = allProjects.concat(projects);
+            
+            console.log(`   Página ${Math.floor(offset / limitPorRequest) + 1}: ${projects.length} proyectos (total: ${allProjects.length})`);
+            
+            // Buscar coincidencia exacta por nombre
+            const projectExacto = projects.find(p => p.name === projectName);
+            if (projectExacto) {
+                console.log(`✅ Proyecto encontrado (coincidencia exacta): ${projectExacto.identifier} (ID: ${projectExacto.id}, Name: ${projectExacto.name})`);
+                return projectExacto.identifier;
+            }
+            
+            // Buscar coincidencia parcial (case-insensitive, contiene el texto)
+            const projectParcial = projects.find(p => 
+                p.name.toLowerCase().includes(projectName.toLowerCase()) ||
+                projectName.toLowerCase().includes(p.name.toLowerCase())
+            );
+            if (projectParcial) {
+                console.log(`✅ Proyecto encontrado (coincidencia parcial): ${projectParcial.identifier} (ID: ${projectParcial.id}, Name: ${projectParcial.name})`);
+                console.log(`   ⚠️ Coincidencia parcial - verifica que sea el proyecto correcto`);
+                return projectParcial.identifier;
+            }
+            
+            hasMore = data.total_count > (offset + limitPorRequest);
+            offset += limitPorRequest;
+            
+            // Pausa entre requests
+            if (hasMore) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        // Si no se encontró, mostrar algunos proyectos similares para debugging
+        console.log(`⚠️ Proyecto "${projectName}" no encontrado en ${allProjects.length} proyectos`);
+        
+        // Buscar proyectos que contengan palabras clave
+        const palabrasClave = projectName.toLowerCase().split(/\s+/).filter(p => p.length > 2);
+        const proyectosSimilares = allProjects.filter(p => {
+            const nombreLower = p.name.toLowerCase();
+            return palabrasClave.some(palabra => nombreLower.includes(palabra));
+        });
+        
+        if (proyectosSimilares.length > 0) {
+            console.log(`\n💡 Proyectos similares encontrados (${proyectosSimilares.length}):`);
+            proyectosSimilares.slice(0, 10).forEach(p => {
+                console.log(`   - "${p.name}" (identifier: ${p.identifier}, id: ${p.id})`);
+            });
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('❌ Error al buscar proyecto por nombre:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Obtener issues de un proyecto por nombre (filtrando por project.name en la respuesta)
+ * Útil cuando no se conoce el project_id pero sí el nombre del proyecto
+ * @param {string} projectName - Nombre del proyecto (ej: "UT Mercap | Proyecto Genérico")
+ * @param {string} tracker_id - ID del tracker (opcional)
+ * @param {number} maxTotal - Límite máximo de issues (null = sin límite)
+ * @returns {Promise<Array>} - Array de issues del proyecto
+ */
+async function obtenerIssuesPorNombreProyecto(projectName, tracker_id = null, maxTotal = null) {
+    validarCredenciales();
+    
+    // Primero intentar obtener el project_id
+    const projectId = await obtenerProjectIdPorNombre(projectName);
+    
+    if (!projectId) {
+        // Si no se encuentra por identifier, obtener todos y filtrar por nombre
+        console.log(`⚠️ No se encontró project_id, filtrando issues por project.name...`);
+        
+        const limitPorRequest = parseInt(process.env.REDMINE_LIMIT_PER_REQUEST) || 100;
+        let offset = 0;
+        let allIssues = [];
+        let hasMore = true;
+        
+        // Obtener issues sin filtro de proyecto (o con un proyecto amplio)
+        // Nota: Esto puede ser ineficiente si hay muchos proyectos
+        while (hasMore && (!maxTotal || allIssues.length < maxTotal)) {
+            const limitActual = maxTotal ? Math.min(limitPorRequest, maxTotal - allIssues.length) : limitPorRequest;
+            
+            const params = new URLSearchParams({
+                status_id: '*',
+                limit: limitActual.toString(),
+                offset: offset.toString(),
+                key: REDMINE_TOKEN
+            });
+            
+            if (tracker_id) {
+                params.set('tracker_id', tracker_id);
+            }
+            
+            const url = `${REDMINE_URL}/issues.json?${params.toString()}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'User-Agent': 'Catalogo-NodeJS/1.0'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const issues = data.issues || [];
+            
+            // Filtrar por nombre del proyecto
+            const filteredIssues = issues.filter(issue => 
+                issue.project?.name === projectName
+            );
+            
+            allIssues = allIssues.concat(filteredIssues);
+            
+            console.log(`   Página ${Math.floor(offset / limitPorRequest) + 1}: ${filteredIssues.length} issues del proyecto "${projectName}" (total: ${allIssues.length}${maxTotal ? `/${maxTotal}` : ''})`);
+            
+            hasMore = data.total_count > (offset + limitActual);
+            offset += limitActual;
+            
+            if (maxTotal && allIssues.length >= maxTotal) {
+                break;
+            }
+            
+            if (hasMore) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        if (maxTotal && allIssues.length > maxTotal) {
+            allIssues = allIssues.slice(0, maxTotal);
+        }
+        
+        console.log(`✅ Total de issues obtenidos del proyecto "${projectName}": ${allIssues.length}`);
+        return allIssues;
+    }
+    
+    // Si se encontró el project_id, usar el método normal
+    const issues = await obtenerTodosLosIssues(projectId, tracker_id, maxTotal);
+    
+    return issues;
+}
+
+/**
+ * Obtener issues mapeados de un proyecto por nombre
+ * @param {string} projectName - Nombre del proyecto (ej: "UT Mercap | Proyecto Genérico")
+ * @param {string} tracker_id - ID del tracker (opcional)
+ * @param {number} maxTotal - Límite máximo de issues (null = sin límite)
+ * @returns {Promise<Array>} - Array de issues mapeados
+ */
+async function obtenerIssuesMapeadosPorNombreProyecto(projectName, tracker_id = null, maxTotal = null) {
+    try {
+        const limitFromEnv = process.env.REDMINE_SYNC_LIMIT ? parseInt(process.env.REDMINE_SYNC_LIMIT) : null;
+        const limitFinal = maxTotal || limitFromEnv;
+        
+        const issues = await obtenerIssuesPorNombreProyecto(projectName, tracker_id, limitFinal);
+        const issuesMapeados = issues.map(mapearIssue);
+        
+        console.log(`✅ Issues mapeados del proyecto "${projectName}": ${issuesMapeados.length}`);
+        
+        return issuesMapeados;
+    } catch (error) {
+        console.error(`❌ Error al mapear issues del proyecto "${projectName}":`, error.message);
         throw error;
     }
 }
@@ -264,10 +493,81 @@ async function probarConexion() {
     }
 }
 
+/**
+ * Listar todos los proyectos disponibles en Redmine
+ * Útil para encontrar el nombre exacto o identifier de un proyecto
+ * @param {number} limit - Límite de proyectos a obtener (null = todos)
+ * @returns {Promise<Array>} - Array de proyectos con {id, identifier, name}
+ */
+async function listarProyectos(limit = null) {
+    validarCredenciales();
+    
+    try {
+        const limitPorRequest = 100;
+        let offset = 0;
+        let allProjects = [];
+        let hasMore = true;
+        
+        console.log('📋 Listando proyectos de Redmine...');
+        
+        while (hasMore && (!limit || allProjects.length < limit)) {
+            const params = new URLSearchParams({
+                limit: limitPorRequest.toString(),
+                offset: offset.toString(),
+                key: REDMINE_TOKEN
+            });
+            
+            const url = `${REDMINE_URL}/projects.json?${params.toString()}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'User-Agent': 'Catalogo-NodeJS/1.0'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const projects = data.projects || [];
+            allProjects = allProjects.concat(projects);
+            
+            hasMore = data.total_count > (offset + limitPorRequest);
+            offset += limitPorRequest;
+            
+            if (hasMore && (!limit || allProjects.length < limit)) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        if (limit && allProjects.length > limit) {
+            allProjects = allProjects.slice(0, limit);
+        }
+        
+        console.log(`✅ ${allProjects.length} proyectos encontrados`);
+        return allProjects.map(p => ({
+            id: p.id,
+            identifier: p.identifier,
+            name: p.name
+        }));
+    } catch (error) {
+        console.error('❌ Error al listar proyectos:', error.message);
+        throw error;
+    }
+}
+
 module.exports = {
     obtenerIssues,
     obtenerTodosLosIssues,
     obtenerIssuesMapeados,
+    obtenerProjectIdPorNombre,
+    obtenerIssuesPorNombreProyecto,
+    obtenerIssuesMapeadosPorNombreProyecto,
+    listarProyectos,
     mapearIssue,
     probarConexion
 };

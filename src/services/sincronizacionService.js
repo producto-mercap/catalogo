@@ -9,10 +9,15 @@ const redmineService = require('./redmineDirectService');
  * @param {number} maxTotal - Límite máximo de issues a sincronizar (null = sin límite)
  * @returns {Promise<Object>} - Resultado de la sincronización
  */
-async function sincronizarRedmine(project_id = process.env.REDMINE_DEFAULT_PROJECT || 'ut-bancor', tracker_id = null, maxTotal = null) {
+async function sincronizarRedmine(project_id = null, tracker_id = null, maxTotal = null) {
+    // Si project_id es null o undefined, usar el valor por defecto
+    project_id = project_id || process.env.REDMINE_DEFAULT_PROJECT || 'ut-bancor';
     console.log('\n🔄 =================================');
     console.log('   INICIANDO SINCRONIZACIÓN REDMINE');
     console.log('   =================================\n');
+    console.log(`   Proyecto ID: ${project_id}`);
+    console.log(`   Tracker ID: ${tracker_id || 'todos'}`);
+    console.log(`   Límite: ${maxTotal || 'sin límite'}\n`);
     
     // Si hay variable de entorno REDMINE_SYNC_LIMIT, usarla
     const limitFromEnv = process.env.REDMINE_SYNC_LIMIT ? parseInt(process.env.REDMINE_SYNC_LIMIT) : null;
@@ -50,20 +55,27 @@ async function sincronizarRedmine(project_id = process.env.REDMINE_DEFAULT_PROJE
             try {
                 const result = await query(`
                     INSERT INTO redmine_issues (
-                        redmine_id, titulo, proyecto, fecha_creacion, sincronizado_en
-                    ) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+                        redmine_id, titulo, proyecto, proyecto_completo, fecha_creacion, 
+                        fecha_real_finalizacion, total_spent_hours, sincronizado_en
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
                     ON CONFLICT (redmine_id) 
                     DO UPDATE SET
                         titulo = EXCLUDED.titulo,
                         proyecto = EXCLUDED.proyecto,
+                        proyecto_completo = EXCLUDED.proyecto_completo,
                         fecha_creacion = EXCLUDED.fecha_creacion,
+                        fecha_real_finalizacion = EXCLUDED.fecha_real_finalizacion,
+                        total_spent_hours = EXCLUDED.total_spent_hours,
                         sincronizado_en = CURRENT_TIMESTAMP
                     RETURNING (xmax = 0) AS inserted
                 `, [
                     issue.redmine_id,
                     issue.titulo,
                     issue.proyecto,
-                    issue.fecha_creacion
+                    issue.proyecto_completo,
+                    issue.fecha_creacion,
+                    issue.fecha_real_finalizacion,
+                    issue.total_spent_hours
                 ]);
 
                 // xmax = 0 significa que fue INSERT, xmax != 0 significa UPDATE
@@ -136,6 +148,161 @@ async function sincronizarRedmine(project_id = process.env.REDMINE_DEFAULT_PROJE
 }
 
 /**
+ * Sincronizar issues de Backlog Proyectos desde Redmine
+ * Usa project_id=590 directamente en la consulta
+ * @param {string} tracker_id - ID del tracker (opcional, ej: '10' para Epic)
+ * @param {number} maxTotal - Límite máximo de issues a sincronizar (null = sin límite)
+ * @returns {Promise<Object>} - Resultado de la sincronización
+ */
+async function sincronizarBacklogProyectos(tracker_id = null, maxTotal = null) {
+    const PROJECT_ID = process.env.REDMINE_BACKLOG_PROJECT || '590'; // ID del proyecto "UT Mercap | Proyecto Genérico"
+    const DEFAULT_TRACKER_ID = process.env.REDMINE_BACKLOG_TRACKER || process.env.REDMINE_DEFAULT_TRACKER || '19'; // Tracker específico para backlog
+    
+    // Usar tracker_id por defecto si no se especifica
+    const trackerIdFinal = tracker_id || DEFAULT_TRACKER_ID;
+    
+    // Si hay variable de entorno REDMINE_SYNC_LIMIT, usarla
+    const limitFromEnv = process.env.REDMINE_SYNC_LIMIT ? parseInt(process.env.REDMINE_SYNC_LIMIT) : null;
+    const limitFinal = maxTotal || limitFromEnv;
+    
+    console.log('\n🔄 =================================');
+    console.log('   INICIANDO SINCRONIZACIÓN BACKLOG PROYECTOS');
+    console.log('   =================================\n');
+    console.log(`   Proyecto ID: ${PROJECT_ID}`);
+    console.log(`   Tracker ID: ${trackerIdFinal} (Epic)`);
+    console.log(`   Límite: ${limitFinal || 'sin límite'}\n`);
+    
+    if (limitFinal) {
+        console.log(`⚠️ Modo prueba: limitado a ${limitFinal} issues\n`);
+    }
+    
+    try {
+        // 1. Obtener issues de Redmine usando project_id directamente
+        console.log('📥 Paso 1: Obteniendo issues de Redmine...');
+        const issuesMapeados = await redmineService.obtenerIssuesMapeados(
+            PROJECT_ID,
+            trackerIdFinal,
+            limitFinal
+        );
+        
+        if (issuesMapeados.length === 0) {
+            console.log('⚠️ No se encontraron issues para sincronizar');
+            return {
+                success: true,
+                message: 'No hay issues para sincronizar',
+                insertados: 0,
+                actualizados: 0,
+                total: 0
+            };
+        }
+
+        console.log(`✅ ${issuesMapeados.length} issues obtenidos de Redmine\n`);
+
+        // 2. Insertar/actualizar en redmine_backlog_issues
+        console.log('💾 Paso 2: Guardando issues en la base de datos...');
+        
+        let insertados = 0;
+        let actualizados = 0;
+
+        for (const issue of issuesMapeados) {
+            try {
+                const result = await query(`
+                    INSERT INTO redmine_backlog_issues (
+                        redmine_id, titulo, proyecto, proyecto_completo, fecha_creacion, 
+                        fecha_real_finalizacion, total_spent_hours, sincronizado_en
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+                    ON CONFLICT (redmine_id) 
+                    DO UPDATE SET
+                        titulo = EXCLUDED.titulo,
+                        proyecto = EXCLUDED.proyecto,
+                        proyecto_completo = EXCLUDED.proyecto_completo,
+                        fecha_creacion = EXCLUDED.fecha_creacion,
+                        fecha_real_finalizacion = EXCLUDED.fecha_real_finalizacion,
+                        total_spent_hours = EXCLUDED.total_spent_hours,
+                        sincronizado_en = CURRENT_TIMESTAMP
+                    RETURNING (xmax = 0) AS inserted
+                `, [
+                    issue.redmine_id,
+                    issue.titulo,
+                    issue.proyecto,
+                    issue.proyecto_completo,
+                    issue.fecha_creacion,
+                    issue.fecha_real_finalizacion,
+                    issue.total_spent_hours
+                ]);
+
+                // xmax = 0 significa que fue INSERT, xmax != 0 significa UPDATE
+                if (result.rows[0].inserted) {
+                    insertados++;
+                } else {
+                    actualizados++;
+                }
+            } catch (error) {
+                console.error(`❌ Error al guardar issue ${issue.redmine_id}:`, error.message);
+            }
+        }
+
+        console.log(`✅ Issues guardados: ${insertados} insertados, ${actualizados} actualizados\n`);
+
+        // 3. Crear proyectos para issues nuevos
+        // Guardar proyecto (sponsor) en seccion para backlog
+        console.log('🔄 Paso 3: Creando proyectos para issues nuevos...');
+        
+        const syncResult = await query(`
+            -- Insertar proyectos nuevos con seccion = proyecto (sponsor) desde redmine_backlog_issues
+            INSERT INTO backlog_proyectos (
+                redmine_id,
+                seccion
+            )
+            SELECT 
+                r.redmine_id,
+                r.proyecto AS seccion
+            FROM redmine_backlog_issues r
+            WHERE NOT EXISTS (
+                SELECT 1 FROM backlog_proyectos b WHERE b.redmine_id = r.redmine_id
+            )
+            RETURNING id, redmine_id;
+        `);
+
+        const proyectosNuevos = syncResult.rowCount;
+        
+        console.log(`✅ ${proyectosNuevos} proyectos nuevos creados (vacíos)\n`);
+
+        // 4. NO actualizar proyectos existentes
+        // Los datos editables (descripcion, seccion, monto, score) SIEMPRE persisten
+        console.log('ℹ️ Proyectos existentes NO se actualizan (datos editables persisten)\n');
+
+        console.log('🎉 =================================');
+        console.log('   SINCRONIZACIÓN BACKLOG COMPLETADA');
+        console.log('   =================================\n');
+
+        return {
+            success: true,
+            message: 'Sincronización de backlog completada exitosamente',
+            redmine_backlog_issues: {
+                insertados,
+                actualizados,
+                total: issuesMapeados.length
+            },
+            backlog_proyectos: {
+                nuevos: proyectosNuevos,
+                actualizados: actualizados
+            }
+        };
+
+    } catch (error) {
+        console.error('\n❌ ERROR EN SINCRONIZACIÓN BACKLOG:', error.message);
+        console.error('   Stack:', error.stack);
+        
+        return {
+            success: false,
+            message: 'Error en la sincronización de backlog',
+            error: error.message
+        };
+    }
+}
+
+/**
  * Verificar estado de la sincronización
  * @returns {Promise<Object>} - Estado actual
  */
@@ -175,6 +342,7 @@ async function obtenerEstadoSincronizacion() {
 
 module.exports = {
     sincronizarRedmine,
+    sincronizarBacklogProyectos,
     obtenerEstadoSincronizacion
 };
 

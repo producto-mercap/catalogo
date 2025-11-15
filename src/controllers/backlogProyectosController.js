@@ -19,18 +19,17 @@ exports.index = async (req, res) => {
         
         const proyectos = await BacklogProyectosModel.obtenerTodas(filtros);
         const secciones = await BacklogProyectosModel.obtenerSecciones();
-        const sponsors = await BacklogProyectosModel.obtenerSponsors();
         const estadisticas = await BacklogProyectosModel.obtenerEstadisticas();
         
         res.render('pages/backlog-proyectos', {
             title: 'Backlog Proyectos',
             proyectos,
             secciones,
-            sponsors,
             estadisticas,
             filtros,
             vista,
-            activeMenu: 'backlog-proyectos'
+            activeMenu: 'backlog-proyectos',
+            isAdmin: req.isAdmin || false
         });
     } catch (error) {
         console.error('Error al cargar backlog de proyectos:', error);
@@ -59,7 +58,8 @@ exports.detalle = async (req, res) => {
         res.render('pages/backlog-proyecto-detalle', {
             title: proyecto.titulo,
             proyecto,
-            activeMenu: 'backlog-proyectos'
+            activeMenu: 'backlog-proyectos',
+            isAdmin: req.isAdmin || false
         });
     } catch (error) {
         console.error('Error al cargar detalle:', error);
@@ -128,8 +128,7 @@ exports.crear = async (req, res) => {
         // Si viene redmine_id, actualizar campos editables
         const datos = {
             descripcion: req.body.descripcion,
-            seccion: req.body.seccion,
-            monto: req.body.monto ? parseFloat(req.body.monto) : null
+            seccion: req.body.seccion
         };
         
         const proyecto = await BacklogProyectosModel.actualizar(req.body.redmine_id, datos);
@@ -164,8 +163,7 @@ exports.actualizar = async (req, res) => {
         const { id } = req.params; // Este es el redmine_id ahora
         const datos = {
             descripcion: req.body.descripcion,
-            seccion: req.body.seccion,
-            monto: req.body.monto ? parseFloat(req.body.monto) : null
+            seccion: req.body.seccion
         };
         
         const proyecto = await BacklogProyectosModel.actualizar(id, datos);

@@ -1,7 +1,5 @@
 // Funcionalidades globales de la aplicación
 
-console.log('✅ Aplicación Catálogo cargada');
-
 // Toggle sidebar
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -258,8 +256,8 @@ async function sincronizarRedmine() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                project_id: 'ut-bancor',
-                tracker_id: '19', // Filtrar solo Epics
+                project_id: null, // Usará REDMINE_DEFAULT_PROJECT del backend
+                tracker_id: null, // Usará el tracker por defecto del backend (Epics)
                 max_total: null // Sin límite para sincronización manual
             })
         });
@@ -281,6 +279,58 @@ async function sincronizarRedmine() {
     } catch (error) {
         ocultarPopupSincronizacion();
         console.error('Error al sincronizar:', error);
+    } finally {
+        // Restaurar botón
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+    }
+}
+
+// Sincronizar Backlog Proyectos con Redmine
+async function sincronizarBacklog() {
+    const button = document.getElementById('syncButton');
+    if (!button) return;
+    
+    // Deshabilitar botón
+    button.disabled = true;
+    button.style.opacity = '0.6';
+    button.style.cursor = 'not-allowed';
+    
+    // Mostrar popup de sincronización
+    mostrarPopupSincronizacion();
+    
+    try {
+        const response = await fetch('/api/redmine/sincronizar-backlog', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                tracker_id: null, // Opcional: filtrar por tracker
+                max_total: null // Sin límite para sincronización manual
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar barra de progreso a 100%
+            actualizarProgresoSincronizacion(100);
+            // Esperar un momento y recargar
+            setTimeout(() => {
+                ocultarPopupSincronizacion();
+                window.location.reload();
+            }, 500);
+        } else {
+            ocultarPopupSincronizacion();
+            console.error('Error en la sincronización:', data.error || 'Error desconocido');
+            alert('Error al sincronizar: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        ocultarPopupSincronizacion();
+        console.error('Error al sincronizar:', error);
+        alert('Error al sincronizar: ' + error.message);
     } finally {
         // Restaurar botón
         button.disabled = false;
@@ -485,6 +535,8 @@ class ScoreCalculator {
     
     async guardarScore(funcionalidadId) {
         try {
+            // Solo enviar criterios, NO los pesos (los pesos se mantienen en la BD)
+            // El backend calculará el score usando los pesos existentes en la BD
             const response = await fetch(`/score/${funcionalidadId}`, {
                 method: 'PUT',
                 headers: {
@@ -496,7 +548,8 @@ class ScoreCalculator {
             const data = await response.json();
             
             if (data.success) {
-                return data.score;
+                // Devolver el score calculado de la BD (score_calculado)
+                return data.score?.score_calculado || data.score;
             } else {
                 console.error('Error al guardar:', data.error);
                 return null;
@@ -613,18 +666,15 @@ class MapaClientes {
 let montosOcultos = true;
 
 function toggleMontos() {
-    console.log('toggleMontos llamado'); // Debug
     montosOcultos = !montosOcultos;
     
     // Buscar todos los elementos que contengan montos
     const montos = document.querySelectorAll('.monto-valor');
-    console.log('Montos encontrados:', montos.length); // Debug
     
     const eyeIcon = document.getElementById('eyeIcon');
     const eyeBtn = document.querySelector('.toggle-monto-btn');
     
     montos.forEach((monto, index) => {
-        console.log(`Monto ${index}:`, monto.textContent); // Debug
         if (montosOcultos) {
             monto.style.filter = 'blur(5px)';
             monto.style.userSelect = 'none';
@@ -654,7 +704,6 @@ function toggleMontos() {
         }
     }
     
-    console.log('Montos ocultos:', montosOcultos); // Debug
 }
 
 // Búsqueda con sugerencias

@@ -30,26 +30,32 @@
                     </button>
                 </div>
                 <div class="toolbar-right">
-                    <button class="btn btn-primary" onclick="guardarScore()">Guardar Score</button>
+                    <button class="btn btn-primary" id="btnGuardarScore" onclick="guardarScore()">Guardar Score</button>
                 </div>
             </div>
             
             <!-- Contenido -->
             <div class="content-area">
                 <div class="score-calculator">
-                    <div style="text-align: center; margin-bottom: 32px;">
-                        <h2 style="font-size: 24px; font-weight: 500; margin-bottom: 8px;">
-                            <%= funcionalidad.titulo %>
-                        </h2>
-                        <% if (funcionalidad.descripcion) { %>
-                            <p style="color: var(--text-secondary); font-size: 14px;">
-                                <%= funcionalidad.descripcion %>
-                            </p>
-                        <% } %>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h2 style="font-size: 20px; font-weight: 500; margin-bottom: 6px; margin: 0;">
+                                <%= funcionalidad.titulo %>
+                            </h2>
+                            <% if (funcionalidad.descripcion) { %>
+                                <p style="color: var(--text-secondary); font-size: 13px; margin: 4px 0 0 0;">
+                                    <%= funcionalidad.descripcion %>
+                                </p>
+                            <% } %>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 4px;">Score Total</div>
+                            <div style="font-size: 32px; font-weight: 600; color: var(--primary-color);" id="scoreTotal">0.00</div>
+                        </div>
                     </div>
                     
                     <!-- Criterios -->
-                    <div style="margin-bottom: 32px;">
+                    <div style="margin-bottom: 20px;">
                         <% 
                         const criterios = [
                             { key: 'facturacion', label: 'Facturación', peso: score ? score.peso_facturacion : 40 },
@@ -92,14 +98,6 @@
                             </div>
                         <% }) %>
                     </div>
-                    
-                    <!-- Resultado -->
-                    <div class="score-result">
-                        <div class="score-result-label">Score Total</div>
-                        <div class="score-result-value" id="scoreTotal">
-                            0.00
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -109,6 +107,7 @@
     <script>
         // Inicializar valores actuales
         const funcionalidadId = <%= funcionalidad.redmine_id || funcionalidad.id %>;
+        const tipo = '<%= tipo || "funcionalidad" %>';
         
         // Cargar valores actuales al inicializar
         document.addEventListener('DOMContentLoaded', () => {
@@ -145,11 +144,32 @@
         
         async function guardarScore() {
             if (window.scoreCalculator) {
-                const resultado = await scoreCalculator.guardarScore(funcionalidadId);
-                if (resultado) {
-                    setTimeout(() => {
-                        window.location.href = '/funcionalidades';
-                    }, 1000);
+                const btnGuardar = document.getElementById('btnGuardarScore');
+                const textoOriginal = btnGuardar.textContent;
+                
+                // Deshabilitar botón y mostrar "guardando"
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = 'Guardando...';
+                
+                try {
+                    const resultado = await scoreCalculator.guardarScore(funcionalidadId);
+                    if (resultado !== null) {
+                        // Redireccionar según el tipo
+                        const redirectUrl = tipo === 'backlog' ? '/backlog-proyectos' : '/funcionalidades';
+                        setTimeout(() => {
+                            window.location.href = redirectUrl;
+                        }, 500);
+                    } else {
+                        // Restaurar botón si hubo error
+                        btnGuardar.disabled = false;
+                        btnGuardar.textContent = textoOriginal;
+                        alert('Error al guardar el score. Por favor, intente nuevamente.');
+                    }
+                } catch (error) {
+                    console.error('Error al guardar:', error);
+                    btnGuardar.disabled = false;
+                    btnGuardar.textContent = textoOriginal;
+                    alert('Error al guardar el score. Por favor, intente nuevamente.');
                 }
             }
         }

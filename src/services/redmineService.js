@@ -2,6 +2,8 @@
 // ⚠️ NOTA: Este servicio NO se está usando actualmente
 // El sistema usa redmineDirectService.js que llama directamente a la API de Redmine
 // Este archivo se mantiene por si se necesita en el futuro, pero no requiere configuración
+// 
+// ⚠️ DEPRECATED: Este archivo no se usa en producción. Se puede eliminar si no se planea usar.
 
 const { OAuth2Client } = require('google-auth-library');
 
