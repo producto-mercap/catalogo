@@ -159,6 +159,7 @@ const mapaRoutes = require('./routes/mapaRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 const redmineRoutes = require('./routes/redmineRoutes');
 const desarrollosRoutes = require('./routes/desarrollosRoutes');
+const ideasMejorasRoutes = require('./routes/ideasMejorasRoutes');
 const authRoutes = require('./routes/authRoutes');
 
 // Rutas públicas
@@ -170,6 +171,7 @@ app.use('/funcionalidades', requireAuth, funcionalidadesRoutes);
 app.use('/score', requireAuth, scoreRoutes);
 app.use('/mapa', requireAuth, mapaRoutes);
 app.use('/backlog-proyectos', requireAuth, desarrollosRoutes);
+app.use('/ideas-mejoras', requireAuth, ideasMejorasRoutes);
 app.use('/api', requireAuth, apiRoutes);
 app.use('/api/redmine', requireAuth, redmineRoutes);
 

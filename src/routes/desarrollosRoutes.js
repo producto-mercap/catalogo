@@ -14,3 +14,12 @@ router.put('/:id', backlogProyectosController.actualizar);
 router.delete('/:id', backlogProyectosController.eliminar);
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
