@@ -7,3 +7,6 @@ router.get('/', ideasMejorasController.index);
 
 module.exports = router;
 
+
+
+
