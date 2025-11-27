@@ -174,7 +174,7 @@
                         </div>
                         
                         <% proyectos.forEach(proyecto => { %>
-                            <div class="list-item" onclick="verDetalle(<%= proyecto.redmine_id %>)">
+                            <div class="list-item" onclick='verDetalle(<%- JSON.stringify(proyecto.redmine_id || proyecto.id) %>)'>
                                 <div class="item-title">
                                     <div class="item-icon">
                                         <%= (proyecto.titulo || '?').substring(0, 1).toUpperCase() %>
@@ -224,10 +224,10 @@
                     <!-- Vista de Tarjetas -->
                     <div class="cards-view">
                         <% proyectos.forEach(proyecto => { %>
-                            <div class="card" onclick="verDetalle(<%= proyecto.redmine_id %>)">
+                            <div class="card" onclick='verDetalle(<%- JSON.stringify(proyecto.redmine_id || proyecto.id) %>)'>
                                 <div class="card-header">
                                     <h3 class="card-title"><%= proyecto.titulo || 'Sin título' %></h3>
-                                    <button class="card-menu" onclick="event.stopPropagation(); eliminarProyecto(<%= proyecto.redmine_id %>)">
+                                    <button class="card-menu" onclick='event.stopPropagation(); eliminarProyecto(<%- JSON.stringify(proyecto.redmine_id || proyecto.id) %>)'>
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                                         </svg>
@@ -351,12 +351,13 @@
         });
         
         function verDetalle(id) {
-            window.location.href = `/backlog-proyectos/${id}`;
+            if (!id) return;
+            window.location.href = `/backlog-proyectos/${encodeURIComponent(id)}`;
         }
         
         function eliminarProyecto(id) {
             if (confirm('¿Estás seguro de eliminar este proyecto?')) {
-                fetch(`/backlog-proyectos/${id}`, {
+                fetch(`/backlog-proyectos/${encodeURIComponent(id)}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())

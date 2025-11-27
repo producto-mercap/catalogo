@@ -69,14 +69,14 @@
                                                 Epic Redmine
                                             </a>
                                         </div>
-                                        <% if (funcionalidad.proyecto_completo) { %>
-                                            <div style="margin-top: 8px; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary-color);">
-                                                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-                                                </svg>
-                                                Proyecto: <%= funcionalidad.proyecto_completo %>
-                                            </div>
-                                        <% } %>
+                                    <% } %>
+                                    <% if (funcionalidad.proyecto) { %>
+                                        <div style="margin-top: 8px; color: var(--text-secondary); font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary-color);">
+                                                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                                            </svg>
+                                            Cliente: <%= funcionalidad.proyecto %>
+                                        </div>
                                     <% } %>
                                 </div>
                             </div>
@@ -88,7 +88,7 @@
                                     </svg>
                                     <span id="btnEditarTexto">Editar</span>
                                 </button>
-                                <button onclick="window.location.href='/score/calculadora/<%= funcionalidad.redmine_id || funcionalidad.id %>'" class="btn btn-evaluar" style="background: #FF9800; color: white; border-color: #FF9800;">
+                                <button onclick='window.location.href="/score/calculadora/" + encodeURIComponent(<%- JSON.stringify(funcionalidad.redmine_id || funcionalidad.id) %>)' class="btn btn-evaluar" style="background: #FF9800; color: white; border-color: #FF9800;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                                     </svg>
@@ -226,33 +226,18 @@
                             <% } %>
                         </div>
                         
-                        <!-- Columna 3: Fecha real Finalización, Horas dedicadas -->
+                        <!-- Columna 3: Reventa, Horas dedicadas -->
                         <div>
-                            <!-- Fecha real Finalización - siempre mostrar, incluso si es null -->
                             <div style="min-height: 60px; margin-bottom: 24px;">
                                 <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
-                                    Fecha real Finalización
+                                    Reventa
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary-color);">
-                                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
                                     </svg>
                                     <span style="font-weight: 500; color: var(--text-primary);">
-                                        <% 
-                                        let fechaFinalizacionFormateada = '-';
-                                        if (funcionalidad.fecha_real_finalizacion) {
-                                            fechaFinalizacionFormateada = funcionalidad.fecha_real_finalizacion;
-                                            try {
-                                                const fechaFinalizacion = new Date(funcionalidad.fecha_real_finalizacion);
-                                                if (!isNaN(fechaFinalizacion.getTime())) {
-                                                    fechaFinalizacionFormateada = fechaFinalizacion.toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' });
-                                                }
-                                            } catch (e) {
-                                                // Mantener el valor original si hay error
-                                            }
-                                        }
-                                        %>
-                                        <%= fechaFinalizacionFormateada %>
+                                        <%= funcionalidad.reventa || 'Sin dato' %>
                                     </span>
                                 </div>
                             </div>
@@ -346,7 +331,7 @@
     <script src="/js/main.js"></script>
     <script>
         let modoEdicion = false;
-        const redmineId = <%= funcionalidad.redmine_id || funcionalidad.id %>;
+        const redmineId = <%- JSON.stringify(funcionalidad.redmine_id || funcionalidad.id) %>;
         
         function toggleEdicion() {
             modoEdicion = !modoEdicion;
@@ -379,7 +364,7 @@
             
             // Guardar funcionalidad
             try {
-                const response = await fetch(`/funcionalidades/${redmineId}`, {
+                const response = await fetch(`/funcionalidades/${encodeURIComponent(redmineId)}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'

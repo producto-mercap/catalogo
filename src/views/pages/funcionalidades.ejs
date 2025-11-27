@@ -223,7 +223,7 @@
                         </div>
                         
                         <% funcionalidades.forEach(func => { %>
-                            <div class="list-item" onclick="verDetalle(<%= func.redmine_id %>)">
+                            <div class="list-item" onclick='verDetalle(<%- JSON.stringify(func.redmine_id || func.id) %>)'>
                                 <div class="item-title">
                                     <div class="item-icon">
                                         <%= (func.titulo || '?').substring(0, 1).toUpperCase() %>
@@ -274,10 +274,10 @@
                     <!-- Vista de Tarjetas -->
                     <div class="cards-view">
                         <% funcionalidades.forEach(func => { %>
-                            <div class="card" onclick="verDetalle(<%= func.redmine_id %>)">
+                            <div class="card" onclick='verDetalle(<%- JSON.stringify(func.redmine_id || func.id) %>)'>
                                 <div class="card-header">
                                     <h3 class="card-title"><%= func.titulo || 'Sin título' %></h3>
-                                    <button class="card-menu" onclick="event.stopPropagation(); eliminarFuncionalidad(<%= func.redmine_id %>)">
+                                    <button class="card-menu" onclick='event.stopPropagation(); eliminarFuncionalidad(<%- JSON.stringify(func.redmine_id || func.id) %>)'>
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
                                         </svg>

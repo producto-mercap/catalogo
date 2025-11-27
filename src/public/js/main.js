@@ -233,7 +233,8 @@ function actualizarOrdenamiento() {
 
 // Ver detalle de funcionalidad
 function verDetalle(id) {
-    window.location.href = `/funcionalidades/${id}`;
+    if (!id) return;
+    window.location.href = `/funcionalidades/${encodeURIComponent(id)}`;
 }
 
 // Sincronizar con Redmine
@@ -407,7 +408,7 @@ function ocultarPopupSincronizacion() {
 // Eliminar funcionalidad
 async function eliminarFuncionalidad(id) {
     try {
-        const response = await fetch(`/funcionalidades/${id}`, {
+        const response = await fetch(`/funcionalidades/${encodeURIComponent(id)}`, {
             method: 'DELETE'
         });
         
@@ -537,7 +538,7 @@ class ScoreCalculator {
         try {
             // Solo enviar criterios, NO los pesos (los pesos se mantienen en la BD)
             // El backend calculará el score usando los pesos existentes en la BD
-            const response = await fetch(`/score/${funcionalidadId}`, {
+            const response = await fetch(`/score/${encodeURIComponent(funcionalidadId)}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -575,7 +576,7 @@ class MapaClientes {
     
     async actualizarEstado(clienteId, funcionalidadId, estado) {
         try {
-            const response = await fetch(`/mapa/estado/${clienteId}/${funcionalidadId}`, {
+            const response = await fetch(`/mapa/estado/${clienteId}/${encodeURIComponent(funcionalidadId)}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
@@ -645,7 +646,7 @@ class MapaClientes {
     mostrarModalEstado(clienteId, funcionalidadId, estadoActual) {
         // Crear modal simple
         const opciones = this.estadosComerciales.map(estado => 
-            `<button class="btn" onclick="mapa.actualizarEstado(${clienteId}, ${funcionalidadId}, '${estado}')">${estado}</button>`
+            `<button class="btn" onclick="mapa.actualizarEstado(${clienteId}, ${JSON.stringify(funcionalidadId)}, '${estado}')">${estado}</button>`
         ).join('');
         
         // Aquí podrías mostrar un modal más elaborado
@@ -748,7 +749,7 @@ function mostrarSugerencias(query) {
     
     // Generar HTML de sugerencias
     const html = filtradas.map(func => `
-        <div class="suggestion-item" onclick="verDetalle(${func.redmine_id || func.id})">
+        <div class="suggestion-item" onclick='verDetalle(${JSON.stringify(func.redmine_id || func.id)})'>
             <div class="suggestion-icon">
                 ${(func.titulo || '?').substring(0, 1).toUpperCase()}
             </div>

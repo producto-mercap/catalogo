@@ -106,7 +106,7 @@
     <script src="/js/main.js"></script>
     <script>
         // Inicializar valores actuales
-        const funcionalidadId = <%= funcionalidad.redmine_id || funcionalidad.id %>;
+        const funcionalidadId = <%- JSON.stringify(funcionalidad.redmine_id || funcionalidad.id) %>;
         const tipo = '<%= tipo || "funcionalidad" %>';
         
         // Cargar valores actuales al inicializar

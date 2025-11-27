@@ -4,6 +4,14 @@
 const REDMINE_URL = process.env.REDMINE_URL;
 const REDMINE_TOKEN = process.env.REDMINE_TOKEN; // API Key de Redmine
 
+// Configuración para sincronización de proyectos (catálogo)
+const REDMINE_PROJECTS_MAX_LIMIT = 100;
+const REDMINE_PROJECT_PRODUCT_FILTER = process.env.REDMINE_PROJECT_PRODUCT_FILTER || 'Unitrade';
+const REDMINE_PROJECT_CATALOG_FILTER = process.env.REDMINE_PROJECT_CATALOG_FILTER || '1';
+const REDMINE_CUSTOM_FIELD_CLIENTE_ID = parseInt(process.env.REDMINE_CUSTOM_FIELD_CLIENTE_ID || '20', 10);
+const REDMINE_CUSTOM_FIELD_SPONSOR_ID = parseInt(process.env.REDMINE_CUSTOM_FIELD_SPONSOR_ID || '94', 10);
+const REDMINE_CUSTOM_FIELD_REVENTA_ID = parseInt(process.env.REDMINE_CUSTOM_FIELD_REVENTA_ID || '93', 10);
+
 /**
  * Validar que las credenciales están configuradas
  */
@@ -170,10 +178,10 @@ async function obtenerTodosLosIssues(project_id = null, tracker_id = null, maxTo
  * @param {string} fieldName - Nombre del campo
  * @returns {string|null} - Valor del campo o null
  */
-function extraerCustomField(customFields, fieldName) {
+function extraerCustomField(customFields, fieldKey) {
     if (!Array.isArray(customFields)) return null;
-    const field = customFields.find(cf => cf.name === fieldName);
-    return field?.value || null;
+    const field = customFields.find(cf => cf.name === fieldKey || cf.id === fieldKey);
+    return field?.value ?? null;
 }
 
 /**
@@ -220,6 +228,131 @@ function mapearIssue(issue) {
         fecha_real_finalizacion: fechaRealFinalizacion, // Custom field id 15
         total_spent_hours: issue.total_spent_hours || null // Horas dedicadas
     };
+}
+
+/**
+ * Normalizar valor de reventa (cf_93)
+ */
+function normalizarReventa(valor) {
+    if (valor === null || typeof valor === 'undefined') return null;
+    const texto = String(valor).trim();
+    if (texto === '') return null;
+    if (texto === '1' || texto.toLowerCase() === 'si') return 'Si';
+    if (texto === '0' || texto.toLowerCase() === 'no') return 'No';
+    return texto;
+}
+
+/**
+ * Mapear proyecto Redmine -> registro redmine_issues (catálogo)
+ */
+function mapearProyecto(proyecto) {
+    const customFields = proyecto.custom_fields || [];
+    const cliente = extraerCustomField(customFields, REDMINE_CUSTOM_FIELD_CLIENTE_ID) || extraerCustomField(customFields, 'Cliente');
+    const sponsor = extraerCustomField(customFields, REDMINE_CUSTOM_FIELD_SPONSOR_ID) || extraerCustomField(customFields, 'Proyecto Sponsor');
+    const reventa = extraerCustomField(customFields, REDMINE_CUSTOM_FIELD_REVENTA_ID) || extraerCustomField(customFields, 'Es Reventa');
+
+    return {
+        redmine_id: proyecto.identifier || proyecto.id?.toString(),
+        titulo: proyecto.name || 'Sin título',
+        proyecto: cliente || 'Sin cliente',
+        fecha_creacion: proyecto.created_on || null,
+        sponsor: sponsor || null,
+        reventa: normalizarReventa(reventa),
+        total_spent_hours: null // No aplica para proyectos
+    };
+}
+
+/**
+ * Obtener proyectos desde Redmine aplicando filtros por custom fields
+ */
+async function obtenerProyectos(options = {}) {
+    validarCredenciales();
+
+    const limitSolicitado = options.limit ? parseInt(options.limit, 10) : null;
+    const limit = Math.min(limitSolicitado || REDMINE_PROJECTS_MAX_LIMIT, REDMINE_PROJECTS_MAX_LIMIT);
+    const offset = options.offset ? Math.max(parseInt(options.offset, 10) || 0, 0) : 0;
+    const producto = options.producto || REDMINE_PROJECT_PRODUCT_FILTER;
+    const catalogo = options.catalogo || REDMINE_PROJECT_CATALOG_FILTER;
+
+    const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+        key: REDMINE_TOKEN
+    });
+
+    if (producto) {
+        params.set('cf_19', producto);
+    }
+    if (catalogo) {
+        params.set('cf_95', catalogo);
+    }
+
+    const baseUrl = REDMINE_URL.replace(/\/+$/, '');
+    const url = `${baseUrl}/projects.json?${params.toString()}`;
+    const urlLog = url.replace(/key=[^&]+/, 'key=***');
+    console.log(`🔍 Consultando proyectos de Redmine: ${urlLog}`);
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': 'Catalogo-NodeJS/1.0'
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error HTTP en proyectos:', response.status);
+            console.error('📄 Respuesta:', errorText.substring(0, 500));
+            throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`✅ Proyectos obtenidos: ${data.projects?.length || 0} (total Redmine: ${data.total_count || data.projects?.length || 0})`);
+        return data;
+    } catch (error) {
+        console.error('❌ Error al obtener proyectos de Redmine:', error.message);
+        throw error;
+    }
+}
+
+/**
+ * Obtener proyectos mapeados listos para sincronizar con redmine_issues
+ */
+async function obtenerProyectosMapeados(options = {}) {
+    const maxTotalSolicitado = options.limit ? parseInt(options.limit, 10) : null;
+    const tope = Math.min(maxTotalSolicitado || REDMINE_PROJECTS_MAX_LIMIT, REDMINE_PROJECTS_MAX_LIMIT);
+    const proyectos = [];
+    let offset = 0;
+    let hasMore = true;
+
+    console.log('📥 Obteniendo proyectos de Redmine (modo catálogo)...');
+
+    while (hasMore && proyectos.length < tope) {
+        const restantes = tope - proyectos.length;
+        const limitActual = Math.min(restantes, REDMINE_PROJECTS_MAX_LIMIT);
+        const data = await obtenerProyectos({
+            ...options,
+            limit: limitActual,
+            offset
+        });
+        const items = data.projects || [];
+        proyectos.push(...items);
+
+        const totalCount = data.total_count || items.length;
+        hasMore = totalCount > (offset + limitActual);
+        offset += limitActual;
+
+        if (!hasMore) {
+            break;
+        }
+    }
+
+    const proyectosLimitados = proyectos.slice(0, tope);
+    console.log(`✅ Proyectos preparados: ${proyectosLimitados.length}`);
+    return proyectosLimitados.map(mapearProyecto);
 }
 
 /**
@@ -569,5 +702,8 @@ module.exports = {
     obtenerIssuesMapeadosPorNombreProyecto,
     listarProyectos,
     mapearIssue,
-    probarConexion
+    probarConexion,
+    obtenerProyectos,
+    obtenerProyectosMapeados,
+    mapearProyecto
 };

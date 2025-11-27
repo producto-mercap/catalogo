@@ -2,6 +2,8 @@
 const { pool, query, transaction } = require('../config/database');
 const redmineService = require('./redmineDirectService');
 
+const MAX_PROJECT_SYNC = 100;
+
 /**
  * Sincronizar issues de Redmine a la base de datos local
  * @param {string} project_id - ID del proyecto en Redmine
@@ -21,61 +23,68 @@ async function sincronizarRedmine(project_id = null, tracker_id = null, maxTotal
     
     // Si hay variable de entorno REDMINE_SYNC_LIMIT, usarla
     const limitFromEnv = process.env.REDMINE_SYNC_LIMIT ? parseInt(process.env.REDMINE_SYNC_LIMIT) : null;
-    const limitFinal = maxTotal || limitFromEnv;
+    const limiteSolicitado = maxTotal || limitFromEnv || MAX_PROJECT_SYNC;
+    const limitFinal = Math.min(limiteSolicitado, MAX_PROJECT_SYNC);
+    
+    if (limiteSolicitado > MAX_PROJECT_SYNC) {
+        console.log(`⚠️ Límite solicitado (${limiteSolicitado}) supera el máximo permitido (${MAX_PROJECT_SYNC}). Se usará ${MAX_PROJECT_SYNC}.`);
+    }
     
     if (limitFinal) {
-        console.log(`⚠️ Modo prueba: limitado a ${limitFinal} issues\n`);
+        console.log(`⚠️ Modo prueba: limitado a ${limitFinal} proyectos\n`);
     }
     
     try {
-        // 1. Obtener issues de Redmine
-        console.log('📥 Paso 1: Obteniendo issues de Redmine...');
-        const issuesMapeados = await redmineService.obtenerIssuesMapeados(project_id, tracker_id, limitFinal);
+        // 1. Obtener proyectos de Redmine filtrados para el catálogo
+        console.log('📥 Paso 1: Obteniendo proyectos de Redmine (catálogo)...');
+        const proyectosMapeados = await redmineService.obtenerProyectosMapeados({
+            limit: limitFinal
+        });
         
-        if (issuesMapeados.length === 0) {
-            console.log('⚠️ No se encontraron issues para sincronizar');
+        if (proyectosMapeados.length === 0) {
+            console.log('⚠️ No se encontraron proyectos para sincronizar');
             return {
                 success: true,
-                message: 'No hay issues para sincronizar',
+                message: 'No hay proyectos para sincronizar',
                 insertados: 0,
                 actualizados: 0,
                 total: 0
             };
         }
 
-        console.log(`✅ ${issuesMapeados.length} issues obtenidos de Redmine\n`);
+        console.log(`✅ ${proyectosMapeados.length} proyectos obtenidos de Redmine\n`);
 
         // 2. Insertar/actualizar en redmine_issues
-        console.log('💾 Paso 2: Guardando issues en la base de datos...');
+        console.log('💾 Paso 2: Guardando proyectos en la base de datos...');
         
         let insertados = 0;
         let actualizados = 0;
 
-        for (const issue of issuesMapeados) {
+        for (const proyecto of proyectosMapeados) {
             try {
                 const result = await query(`
                     INSERT INTO redmine_issues (
-                        redmine_id, titulo, proyecto, proyecto_completo, fecha_creacion, 
-                        fecha_real_finalizacion, total_spent_hours, sincronizado_en
+                        redmine_id, titulo, proyecto, fecha_creacion, sponsor, reventa, 
+                        total_spent_hours, sincronizado_en
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
                     ON CONFLICT (redmine_id) 
                     DO UPDATE SET
                         titulo = EXCLUDED.titulo,
                         proyecto = EXCLUDED.proyecto,
-                        proyecto_completo = EXCLUDED.proyecto_completo,
                         fecha_creacion = EXCLUDED.fecha_creacion,
-                        fecha_real_finalizacion = EXCLUDED.fecha_real_finalizacion,
+                        sponsor = EXCLUDED.sponsor,
+                        reventa = EXCLUDED.reventa,
                         total_spent_hours = EXCLUDED.total_spent_hours,
                         sincronizado_en = CURRENT_TIMESTAMP
                     RETURNING (xmax = 0) AS inserted
                 `, [
-                    issue.redmine_id,
-                    issue.titulo,
-                    issue.proyecto,
-                    issue.proyecto_completo,
-                    issue.fecha_creacion,
-                    issue.fecha_real_finalizacion,
-                    issue.total_spent_hours
+                    proyecto.redmine_id,
+                    proyecto.titulo,
+                    proyecto.proyecto,
+                    proyecto.fecha_creacion,
+                    proyecto.sponsor,
+                    proyecto.reventa,
+                    proyecto.total_spent_hours
                 ]);
 
                 // xmax = 0 significa que fue INSERT, xmax != 0 significa UPDATE
@@ -85,11 +94,11 @@ async function sincronizarRedmine(project_id = null, tracker_id = null, maxTotal
                     actualizados++;
                 }
             } catch (error) {
-                console.error(`❌ Error al guardar issue ${issue.redmine_id}:`, error.message);
+                console.error(`❌ Error al guardar proyecto ${proyecto.redmine_id}:`, error.message);
             }
         }
 
-        console.log(`✅ Issues guardados: ${insertados} insertados, ${actualizados} actualizados\n`);
+        console.log(`✅ Proyectos guardados: ${insertados} insertados, ${actualizados} actualizados\n`);
 
         // 3. Crear funcionalidades VACÍAS para issues nuevos
         console.log('🔄 Paso 3: Creando funcionalidades para issues nuevos...');
@@ -127,7 +136,7 @@ async function sincronizarRedmine(project_id = null, tracker_id = null, maxTotal
             redmine_issues: {
                 insertados,
                 actualizados,
-                total: issuesMapeados.length
+                total: proyectosMapeados.length
             },
             funcionalidades: {
                 nuevas: funcionalidadesNuevas,

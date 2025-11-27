@@ -96,7 +96,7 @@
                                 <div style="text-align: center;">
                                     <button 
                                         class="btn btn-primary" 
-                                        onclick="window.location.href='/score/calculadora/<%= func.redmine_id || func.id %>'"
+                                        onclick='window.location.href="/score/calculadora/" + encodeURIComponent(<%- JSON.stringify(func.redmine_id || func.id) %>)'
                                     >
                                         Evaluar
                                     </button>
