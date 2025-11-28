@@ -361,7 +361,7 @@ async function sincronizarReqClientes() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                tracker_id: null, // Usará el tracker por defecto (30)
+                tracker_id: null, // Usará el tracker por defecto (29)
                 max_total: null // Sin límite para sincronización manual
             })
         });

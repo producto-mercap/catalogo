@@ -161,7 +161,7 @@ router.post('/sincronizar-req-clientes', requireAdmin, async (req, res) => {
         const { tracker_id = null, max_total = null } = req.body;
         const maxTotal = max_total ? parseInt(max_total) : null;
         
-        console.log(`\n🔄 Iniciando sincronización requerimientos clientes: tracker=${tracker_id || '30'}, límite=${maxTotal || '100'}`);
+        console.log(`\n🔄 Iniciando sincronización requerimientos clientes: tracker=${tracker_id || '29'}, límite=${maxTotal || '100'}`);
         console.log(`   ⚠️ SOLO CONSULTA - No se realizan modificaciones en Redmine`);
         
         const resultado = await sincronizacionService.sincronizarReqClientes(tracker_id, maxTotal);

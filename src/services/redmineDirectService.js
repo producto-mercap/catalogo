@@ -254,14 +254,33 @@ function mapearIssueReqClientes(issue) {
     const customFields = issue.custom_fields || [];
     const fechaRealFinalizacion = customFields.find(cf => cf.id === 15)?.value || null;
     
+    // Extraer cf_91 (Es Reventa) - normalizar valores vacíos a null
+    const cf91Raw = customFields.find(cf => cf.id === 91)?.value;
+    const cf91 = (cf91Raw !== undefined && cf91Raw !== null && cf91Raw !== '') ? String(cf91Raw) : null;
+    
+    // Extraer cf_92 (Proyecto Sponsor) - normalizar valores vacíos a null
+    const cf92Raw = customFields.find(cf => cf.id === 92)?.value;
+    const cf92 = (cf92Raw !== undefined && cf92Raw !== null && cf92Raw !== '') ? String(cf92Raw) : null;
+    
+    // Log para depuración si hay valores
+    if (cf91 || cf92) {
+        console.log(`   📋 Issue ${issue.id}: cf_91="${cf91}", cf_92="${cf92}"`);
+    }
+    
     // Estado Redmine desde status.name
     const estadoRedmine = issue.status?.name || null;
     
-    // Limpiar título: eliminar prefijo "Análisis de alto nivel para: " si existe
+    // Limpiar título: eliminar prefijos comunes si existen
     let titulo = issue.subject || 'Sin título';
-    const prefijo = 'Análisis de alto nivel para: ';
-    if (titulo.startsWith(prefijo)) {
-        titulo = titulo.substring(prefijo.length).trim();
+    const prefijos = [
+        'Análisis de alto nivel para: ',
+        'Análisis de Factibilidad para: '
+    ];
+    for (const prefijo of prefijos) {
+        if (titulo.startsWith(prefijo)) {
+            titulo = titulo.substring(prefijo.length).trim();
+            break; // Solo eliminar el primer prefijo que coincida
+        }
     }
     
     return {
@@ -274,7 +293,9 @@ function mapearIssueReqClientes(issue) {
         fecha_creacion: issue.created_on || null,
         fecha_real_finalizacion: fechaRealFinalizacion,
         total_spent_hours: issue.total_spent_hours || null,
-        estado_redmine: estadoRedmine // Status.name
+        estado_redmine: estadoRedmine, // Status.name
+        cf_91: cf91, // Es Reventa
+        cf_92: cf92 // Proyecto Sponsor
     };
 }
 
@@ -551,7 +572,7 @@ async function obtenerIssuesProyectosInternos(options = {}) {
  * ⚠️ SOLO PARA CONSULTAS (READ-ONLY)
  * @param {Object} options
  * @param {string} options.project_id - ID o identifier del proyecto (default 'ut')
- * @param {string} options.tracker_id - Tracker ID (default 30)
+ * @param {string} options.tracker_id - Tracker ID (default 29)
  * @param {string} options.status_id - Estado (default '*')
  * @param {number} options.limit - Límite (max 100)
  */
@@ -559,7 +580,7 @@ async function obtenerIssuesReqClientes(options = {}) {
     validarCredenciales();
 
     const projectId = options.project_id || 'ut';
-    const trackerId = options.tracker_id || '30';
+    const trackerId = options.tracker_id || '29';
     const statusId = options.status_id || '*';
     const limit = Math.min(options.limit || 100, 100);
 
@@ -575,6 +596,7 @@ async function obtenerIssuesReqClientes(options = {}) {
     const url = `${baseUrl}/issues.json?${params.toString()}`;
     const urlLog = url.replace(/key=[^&]+/, 'key=***');
     console.log(`🔍 Consultando Redmine (requerimientos clientes): ${urlLog}`);
+    console.log(`   Parámetros: project_id=${projectId}, tracker_id=${trackerId}, status_id=${statusId || 'todos'}, limit=${limit}`);
     console.log(`   ⚠️ SOLO CONSULTA - No se realizan modificaciones`);
 
     const response = await fetch(url, {

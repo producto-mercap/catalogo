@@ -357,13 +357,13 @@ async function obtenerEstadoSincronizacion() {
 /**
  * Sincronizar issues de Requerimientos de Clientes desde Redmine
  * ⚠️ SOLO CONSULTAS - No se realizan modificaciones en Redmine
- * @param {string} tracker_id - ID del tracker (opcional, default 30)
+ * @param {string} tracker_id - ID del tracker (opcional, default 29)
  * @param {number} maxTotal - Límite máximo de issues a sincronizar (null = sin límite)
  * @returns {Promise<Object>} - Resultado de la sincronización
  */
 async function sincronizarReqClientes(tracker_id = null, maxTotal = null) {
     const REQ_CLIENTES_PROJECT_ID = 'ut';
-    const DEFAULT_TRACKER_ID = '30';
+    const DEFAULT_TRACKER_ID = '29';
     const DEFAULT_STATUS_ID = '*';
     
     // Usar tracker_id por defecto si no se especifica
@@ -418,7 +418,14 @@ async function sincronizarReqClientes(tracker_id = null, maxTotal = null) {
 
         for (const issue of issuesMapeados) {
             try {
-                // Validar si el proyecto_completo existe en redmine_issues.titulo
+                // Validar 1: Omitir si el proyecto es "UT Mercap | Mantenimiento"
+                if (issue.proyecto_completo === 'UT Mercap | Mantenimiento') {
+                    console.log(`   ⚠️ Omitiendo issue ${issue.redmine_id}: proyecto "${issue.proyecto_completo}" es de mantenimiento`);
+                    omitidos++;
+                    continue;
+                }
+                
+                // Validar 2: Omitir si el proyecto_completo existe en redmine_issues.titulo (funcionalidades)
                 if (issue.proyecto_completo) {
                     const validacion = await query(`
                         SELECT COUNT(*) as existe
@@ -427,17 +434,23 @@ async function sincronizarReqClientes(tracker_id = null, maxTotal = null) {
                     `, [issue.proyecto_completo]);
                     
                     if (parseInt(validacion.rows[0].existe) > 0) {
-                        console.log(`   ⚠️ Omitiendo issue ${issue.redmine_id}: proyecto_completo "${issue.proyecto_completo}" ya existe en redmine_issues`);
+                        console.log(`   ⚠️ Omitiendo issue ${issue.redmine_id}: proyecto_completo "${issue.proyecto_completo}" ya existe en redmine_issues (funcionalidades)`);
                         omitidos++;
                         continue;
                     }
                 }
                 
+                // Log para depuración de cf_91 y cf_92 antes de guardar
+                if (issue.cf_91 || issue.cf_92) {
+                    console.log(`   💾 Guardando issue ${issue.redmine_id}: cf_91="${issue.cf_91}", cf_92="${issue.cf_92}"`);
+                }
+                
                 const result = await query(`
                     INSERT INTO redmine_req_clientes (
                         redmine_id, titulo, proyecto_completo, fecha_creacion, 
-                        fecha_real_finalizacion, total_spent_hours, estado_redmine, sincronizado_en
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+                        fecha_real_finalizacion, total_spent_hours, estado_redmine, 
+                        cf_91, cf_92, sincronizado_en
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
                     ON CONFLICT (redmine_id) 
                     DO UPDATE SET
                         titulo = EXCLUDED.titulo,
@@ -446,6 +459,8 @@ async function sincronizarReqClientes(tracker_id = null, maxTotal = null) {
                         fecha_real_finalizacion = EXCLUDED.fecha_real_finalizacion,
                         total_spent_hours = EXCLUDED.total_spent_hours,
                         estado_redmine = EXCLUDED.estado_redmine,
+                        cf_91 = EXCLUDED.cf_91,
+                        cf_92 = EXCLUDED.cf_92,
                         sincronizado_en = CURRENT_TIMESTAMP
                     RETURNING (xmax = 0) AS inserted
                 `, [
@@ -455,7 +470,9 @@ async function sincronizarReqClientes(tracker_id = null, maxTotal = null) {
                     issue.fecha_creacion,
                     issue.fecha_real_finalizacion,
                     issue.total_spent_hours,
-                    issue.estado_redmine
+                    issue.estado_redmine,
+                    issue.cf_91,
+                    issue.cf_92
                 ]);
 
                 // xmax = 0 significa que fue INSERT, xmax != 0 significa UPDATE

@@ -62,11 +62,76 @@ exports.detalle = async (req, res) => {
         const clientesFuncionalidad = await MapaModel.obtenerClientesPorFuncionalidad(id);
         const todosLosClientes = await MapaModel.obtenerTodosLosClientes();
         
+        // Obtener código del proyecto desde Redmine si está disponible
+        let proyectoCodigo = null;
+        if (funcionalidad.redmine_id) {
+            try {
+                const REDMINE_URL = process.env.REDMINE_URL;
+                const REDMINE_TOKEN = process.env.REDMINE_TOKEN;
+                
+                if (!REDMINE_URL || !REDMINE_TOKEN) {
+                    console.warn('⚠️ REDMINE_URL o REDMINE_TOKEN no están configurados');
+                } else {
+                    const redmineIdStr = String(funcionalidad.redmine_id);
+                    const esNumero = /^\d+$/.test(redmineIdStr);
+                    
+                    if (esNumero) {
+                        // Es un ID de issue numérico, obtener el issue y extraer el identifier del proyecto
+                        const baseUrl = REDMINE_URL.replace(/\/+$/, '');
+                        const url = `${baseUrl}/issues/${funcionalidad.redmine_id}.json?key=${REDMINE_TOKEN}`;
+                        
+                        const response = await fetch(url, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'User-Agent': 'Catalogo-NodeJS/1.0'
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.issue && data.issue.project && data.issue.project.identifier) {
+                                proyectoCodigo = data.issue.project.identifier;
+                                console.log(`✅ Código del proyecto obtenido desde issue ${funcionalidad.redmine_id}: "${proyectoCodigo}"`);
+                            }
+                        } else {
+                            console.warn(`⚠️ Error HTTP al obtener issue ${funcionalidad.redmine_id}: ${response.status}`);
+                        }
+                    } else {
+                        // Parece ser un identifier de proyecto, usarlo directamente
+                        proyectoCodigo = redmineIdStr;
+                        console.log(`✅ Usando redmine_id como identifier del proyecto: "${proyectoCodigo}"`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al obtener código del proyecto desde Redmine:', error);
+                // Continuar sin el código del proyecto
+            }
+        }
+        
+        // Obtener req clientes por sponsor (cf_92 = código del proyecto)
+        const ReqClientesModel = require('../models/ReqClientesModel');
+        let reqClientesInteresados = [];
+        if (proyectoCodigo) {
+            try {
+                console.log(`🔍 Buscando req clientes interesados para proyecto: "${proyectoCodigo}"`);
+                reqClientesInteresados = await ReqClientesModel.obtenerPorSponsor(proyectoCodigo);
+                console.log(`✅ Encontrados ${reqClientesInteresados.length} req clientes interesados`);
+            } catch (error) {
+                console.error('Error al obtener req clientes interesados:', error);
+            }
+        } else {
+            console.log('⚠️ No se pudo obtener proyectoCodigo, no se buscarán req clientes interesados');
+        }
+        
         res.render('pages/funcionalidad-detalle', {
             title: funcionalidad.titulo_personalizado || funcionalidad.titulo || 'Funcionalidad',
             funcionalidad,
             clientesFuncionalidad,
             todosLosClientes,
+            proyectoCodigo,
+            reqClientesInteresados,
             activeMenu: 'funcionalidades',
             isAdmin: req.isAdmin || false
         });

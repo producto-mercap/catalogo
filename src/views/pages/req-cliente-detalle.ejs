@@ -155,8 +155,44 @@
                             </div>
                         </div>
                         
-                        <!-- Columna 2: Fecha de creación, Estado -->
+                        <!-- Columna 2: Reventa, Sponsor, Fecha de creación, Estado -->
                         <div>
+                            <% if (requerimiento.cf_91) { %>
+                                <div style="min-height: 60px; margin-bottom: 24px;">
+                                    <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
+                                        Reventa
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary-color);">
+                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                        </svg>
+                                        <span style="font-weight: 500; color: var(--text-primary);">
+                                            <%= requerimiento.cf_91 %>
+                                        </span>
+                                    </div>
+                                </div>
+                            <% } else { %>
+                                <div style="min-height: 60px; margin-bottom: 24px;"></div>
+                            <% } %>
+                            
+                            <% if (requerimiento.cf_92) { %>
+                                <div style="min-height: 60px; margin-bottom: 24px;">
+                                    <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">
+                                        Sponsor
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="color: var(--primary-color);">
+                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                        </svg>
+                                        <span style="font-weight: 500; color: var(--text-primary);">
+                                            <%= requerimiento.cf_92 %>
+                                        </span>
+                                    </div>
+                                </div>
+                            <% } else { %>
+                                <div style="min-height: 60px; margin-bottom: 24px;"></div>
+                            <% } %>
+                            
                             <% if (requerimiento.fecha_creacion) { %>
                                 <div style="min-height: 60px; margin-bottom: 24px;">
                                     <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">

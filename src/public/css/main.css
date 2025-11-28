@@ -722,7 +722,7 @@ select.btn:focus {
 /* Grid específico para requerimientos de clientes (con Proyecto antes de Sección) */
 .req-clientes.list-header,
 .req-clientes.list-item {
-    grid-template-columns: 2fr 220px 150px 100px 120px 80px;
+    grid-template-columns: 2fr 220px 150px 100px 120px 120px 80px; /* Título, Proyecto, Sección, Reventa, Estado, Redmine, Score */
 }
 
 /* Asegurar que todos los divs respeten el ancho del grid */
@@ -730,6 +730,8 @@ select.btn:focus {
 .req-clientes.list-item > div {
     width: 100%;
     box-sizing: border-box;
+    padding: 0;
+    margin: 0;
 }
 
 /* Centrar todos los headers en req-clientes (excepto Título) */
@@ -738,14 +740,60 @@ select.btn:focus {
     text-align: center;
     display: flex;
     align-items: center;
+    position: relative;
+    width: 100%;
+    gap: 0;
+    padding: 0;
+    margin: 0;
 }
 
-/* Centrar todos los valores en req-clientes (excepto Título) */
+/* Asegurar que el span con el texto esté centrado y ocupe todo el ancho disponible */
+.req-clientes.list-header > div:not(:first-child) > span {
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+/* Posicionar iconos de ordenamiento de forma absoluta para no afectar el centrado */
+.req-clientes.list-header > div:not(:first-child) .sort-icon {
+    position: absolute;
+    right: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.req-clientes.list-header > div:not(:first-child):hover .sort-icon,
+.req-clientes.list-header > div:not(:first-child).sorted .sort-icon {
+    opacity: 1;
+}
+
+/* Centrar todos los valores en req-clientes (excepto Título) - IDÉNTICO a headers */
 .req-clientes.list-item > div:not(:first-child) {
     justify-content: center;
     text-align: center;
     display: flex;
     align-items: center;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 0;
+    padding: 0;
+    margin: 0;
+}
+
+/* Sobrescribir estilos específicos de .item-text para req-clientes */
+.req-clientes.list-item > .item-text {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .list-header > div {
@@ -1288,6 +1336,28 @@ select.btn:focus {
     user-select: none;
 }
 
+/* Contenedor del buscador estilo Google */
+.google-search-box {
+    position: relative;
+}
+
+.google-search-box-container {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #dfe1e5;
+    border-radius: 24px;
+    padding: 0 16px;
+    height: 44px;
+    box-shadow: 0 2px 5px 1px rgba(64,60,67,.16);
+    transition: all 0.2s;
+}
+
+.google-search-box-container:focus-within {
+    box-shadow: 0 2px 8px 1px rgba(64,60,67,.24);
+    border-color: transparent;
+}
+
 /* Sugerencias de búsqueda estilo Google */
 .google-search-suggestions {
     position: absolute;
@@ -1295,6 +1365,8 @@ select.btn:focus {
     left: 0;
     right: 0;
     background: white;
+    border: 1px solid #dfe1e5;
+    border-top: none;
     border-radius: 0 0 24px 24px;
     box-shadow: 0 4px 6px rgba(32,33,36,.28);
     max-height: 400px;

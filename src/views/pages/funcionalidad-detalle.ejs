@@ -73,6 +73,11 @@
                                                     Título Redmine: <%= funcionalidad.titulo %>
                                                 </div>
                                             <% } %>
+                                            <% if (typeof proyectoCodigo !== 'undefined' && proyectoCodigo) { %>
+                                                <div style="margin-top: 4px; color: var(--text-secondary); font-size: 12px; padding-left: 24px;">
+                                                    Código del proyecto: <%= proyectoCodigo %>
+                                                </div>
+                                            <% } %>
                                         </div>
                                     <% } %>
                                     <% if (funcionalidad.proyecto) { %>
@@ -294,6 +299,24 @@
                                 <% }) %>
                             <% } else { %>
                                 <span style="color: var(--text-secondary); font-style: italic;">Sin clientes en estado productivo</span>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <!-- Interesados Reventa -->
+                    <div style="margin-bottom: 32px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+                        <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">
+                            Interesados Reventa
+                        </h2>
+                        <div class="client-tags-container">
+                            <% if (typeof reqClientesInteresados !== 'undefined' && reqClientesInteresados.length > 0) { %>
+                                <% reqClientesInteresados.forEach(reqCliente => { %>
+                                    <a href="/req-clientes/<%= reqCliente.redmine_id || reqCliente.id %>" class="client-tag" style="text-decoration: none; cursor: pointer;">
+                                        <%= reqCliente.titulo || 'Sin título' %>
+                                    </a>
+                                <% }) %>
+                            <% } else { %>
+                                <span style="color: var(--text-secondary); font-style: italic;">Sin requerimientos de clientes interesados</span>
                             <% } %>
                         </div>
                     </div>

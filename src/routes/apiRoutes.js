@@ -6,6 +6,7 @@ const ScoreModel = require('../models/ScoreModel');
 const MapaModel = require('../models/MapaModel');
 const ProyectosInternosModel = require('../models/ProyectosInternosModel');
 const ScoreBacklogModel = require('../models/ScoreBacklogModel');
+const ReqClientesModel = require('../models/ReqClientesModel');
 
 /**
  * API de funcionalidades
@@ -224,6 +225,46 @@ router.get('/proyectos-internos/ranking', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Error al obtener ranking'
+        });
+    }
+});
+
+/**
+ * API de sugerencias de búsqueda para requerimientos de clientes
+ */
+router.get('/req-clientes/sugerencias', async (req, res) => {
+    try {
+        const query = req.query.q || '';
+        
+        if (!query || query.length < 2) {
+            return res.json({
+                success: true,
+                sugerencias: []
+            });
+        }
+        
+        const filtros = {
+            busqueda: query
+        };
+        
+        const requerimientos = await ReqClientesModel.obtenerTodas(filtros);
+        
+        // Limitar a 8 sugerencias
+        const sugerencias = requerimientos.slice(0, 8).map(requerimiento => ({
+            id: requerimiento.redmine_id || requerimiento.id,
+            titulo: requerimiento.titulo || 'Sin título',
+            seccion: requerimiento.seccion || ''
+        }));
+        
+        res.json({
+            success: true,
+            sugerencias
+        });
+    } catch (error) {
+        console.error('Error en API sugerencias requerimientos clientes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al obtener sugerencias'
         });
     }
 });

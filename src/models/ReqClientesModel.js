@@ -190,6 +190,60 @@ class ReqClientesModel {
             throw error;
         }
     }
+
+    /**
+     * Obtener requerimientos de clientes por sponsor (cf_92)
+     * @param {string} sponsor - Código del proyecto (sponsor)
+     * @returns {Promise<Array>} - Array de requerimientos de clientes
+     */
+    static async obtenerPorSponsor(sponsor) {
+        try {
+            if (!sponsor) {
+                return [];
+            }
+            
+            // Normalizar el sponsor: trim y convertir a string
+            const sponsorNormalizado = String(sponsor).trim();
+            
+            console.log(`🔍 Buscando req clientes con cf_92="${sponsorNormalizado}"`);
+            
+            // Consulta de depuración: ver todos los valores de cf_92 que existen
+            const debugQuery = `
+                SELECT DISTINCT cf_92, COUNT(*) as cantidad
+                FROM v_req_clientes_completos
+                WHERE cf_92 IS NOT NULL
+                GROUP BY cf_92
+                ORDER BY cf_92
+            `;
+            const debugResult = await pool.query(debugQuery);
+            console.log(`📊 Valores de cf_92 en BD: ${debugResult.rows.map(r => `"${r.cf_92}" (${r.cantidad})`).join(', ')}`);
+            
+            // Búsqueda case-insensitive y con trim
+            const query = `
+                SELECT 
+                    v.*,
+                    s.score_calculado,
+                    COALESCE(s.score_calculado, 0) AS score_total
+                FROM v_req_clientes_completos v
+                LEFT JOIN score_backlog s ON v.redmine_id = s.funcionalidad_id
+                WHERE TRIM(v.cf_92) = TRIM($1)
+                ORDER BY v.titulo ASC
+            `;
+            const result = await pool.query(query, [sponsorNormalizado]);
+            
+            console.log(`✅ Encontrados ${result.rows.length} req clientes con cf_92="${sponsorNormalizado}"`);
+            if (result.rows.length > 0) {
+                console.log(`   Req encontrados: ${result.rows.map(r => `${r.titulo} (cf_92="${r.cf_92}")`).join(', ')}`);
+            } else {
+                console.log(`   ⚠️ No se encontraron req clientes. Verificar que el valor "${sponsorNormalizado}" coincida exactamente con algún cf_92 en la BD.`);
+            }
+            
+            return result.rows;
+        } catch (error) {
+            console.error('Error al obtener requerimientos por sponsor:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = ReqClientesModel;
