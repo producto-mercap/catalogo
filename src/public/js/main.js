@@ -340,6 +340,59 @@ async function sincronizarProyectosInternos() {
     }
 }
 
+// Sincronizar Requerimientos de Clientes con Redmine
+// ⚠️ SOLO CONSULTA - No se realizan modificaciones en Redmine
+async function sincronizarReqClientes() {
+    const button = document.getElementById('syncButton');
+    if (!button) return;
+    
+    // Deshabilitar botón
+    button.disabled = true;
+    button.style.opacity = '0.6';
+    button.style.cursor = 'not-allowed';
+    
+    // Mostrar popup de sincronización
+    mostrarPopupSincronizacion();
+    
+    try {
+        const response = await fetch('/api/redmine/sincronizar-req-clientes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                tracker_id: null, // Usará el tracker por defecto (30)
+                max_total: null // Sin límite para sincronización manual
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar barra de progreso a 100%
+            actualizarProgresoSincronizacion(100);
+            // Esperar un momento y recargar
+            setTimeout(() => {
+                ocultarPopupSincronizacion();
+                window.location.reload();
+            }, 500);
+        } else {
+            ocultarPopupSincronizacion();
+            console.error('Error en la sincronización:', data.error || 'Error desconocido');
+            alert('Error al sincronizar: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        ocultarPopupSincronizacion();
+        console.error('Error al sincronizar:', error);
+        alert('Error al sincronizar: ' + error.message);
+    } finally {
+        // Restaurar botón
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+    }
+}
+
 // Mostrar popup de sincronización
 function mostrarPopupSincronizacion() {
     // Crear overlay

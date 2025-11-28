@@ -32,10 +32,14 @@ class MapaModel {
             
             // Obtener todas las funcionalidades desde la vista combinada
             const queryFuncionalidades = `
-                SELECT v.*, s.score_calculado 
+                SELECT 
+                    v.*, 
+                    f.titulo_personalizado,
+                    s.score_calculado 
                 FROM v_funcionalidades_completas v
+                LEFT JOIN funcionalidades f ON v.redmine_id = f.redmine_id
                 LEFT JOIN score s ON v.redmine_id = s.funcionalidad_id
-                ORDER BY v.titulo
+                ORDER BY COALESCE(f.titulo_personalizado, v.titulo)
             `;
             const resultFuncionalidades = await pool.query(queryFuncionalidades);
             
@@ -291,12 +295,14 @@ class MapaModel {
                 SELECT 
                     v.redmine_id,
                     v.titulo,
+                    f.titulo_personalizado,
                     v.seccion,
                     v.sponsor,
                     COUNT(DISTINCT cf.cliente_id) as cantidad_clientes
                 FROM v_funcionalidades_completas v
+                LEFT JOIN funcionalidades f ON v.redmine_id = f.redmine_id
                 LEFT JOIN cliente_funcionalidad cf ON v.redmine_id = cf.funcionalidad_id
-                GROUP BY v.redmine_id, v.titulo, v.seccion, v.sponsor
+                GROUP BY v.redmine_id, v.titulo, f.titulo_personalizado, v.seccion, v.sponsor
                 HAVING COUNT(DISTINCT cf.cliente_id) > 0
                 ORDER BY cantidad_clientes DESC
                 LIMIT $1

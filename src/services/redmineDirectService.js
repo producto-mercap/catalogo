@@ -243,6 +243,42 @@ function mapearIssueProyectosInternos(issue) {
 }
 
 /**
+ * Mapear issue de Redmine para Requerimientos de Clientes
+ * @param {Object} issue - Issue de Redmine
+ * @returns {Object} - Datos mapeados para requerimientos de clientes
+ */
+function mapearIssueReqClientes(issue) {
+    const proyectoCompleto = issue.project?.name || null;
+    
+    // Extraer custom fields
+    const customFields = issue.custom_fields || [];
+    const fechaRealFinalizacion = customFields.find(cf => cf.id === 15)?.value || null;
+    
+    // Estado Redmine desde status.name
+    const estadoRedmine = issue.status?.name || null;
+    
+    // Limpiar título: eliminar prefijo "Análisis de alto nivel para: " si existe
+    let titulo = issue.subject || 'Sin título';
+    const prefijo = 'Análisis de alto nivel para: ';
+    if (titulo.startsWith(prefijo)) {
+        titulo = titulo.substring(prefijo.length).trim();
+    }
+    
+    return {
+        // ID del issue (único e inmutable)
+        redmine_id: issue.id,
+        
+        // Datos básicos de Redmine (no editables)
+        titulo: titulo,
+        proyecto_completo: proyectoCompleto, // Proyecto completo (en lugar de Services ID)
+        fecha_creacion: issue.created_on || null,
+        fecha_real_finalizacion: fechaRealFinalizacion,
+        total_spent_hours: issue.total_spent_hours || null,
+        estado_redmine: estadoRedmine // Status.name
+    };
+}
+
+/**
  * Normalizar valor de reventa (cf_93)
  */
 function normalizarReventa(valor) {
@@ -508,6 +544,59 @@ async function obtenerIssuesProyectosInternos(options = {}) {
     const issues = data.issues || [];
     console.log(`✅ Issues obtenidos (proyectos internos): ${issues.length}`);
     return issues.map(mapearIssueProyectosInternos);
+}
+
+/**
+ * Obtener issues filtrando por proyecto y tracker (Requerimientos de Clientes)
+ * ⚠️ SOLO PARA CONSULTAS (READ-ONLY)
+ * @param {Object} options
+ * @param {string} options.project_id - ID o identifier del proyecto (default 'ut')
+ * @param {string} options.tracker_id - Tracker ID (default 30)
+ * @param {string} options.status_id - Estado (default '*')
+ * @param {number} options.limit - Límite (max 100)
+ */
+async function obtenerIssuesReqClientes(options = {}) {
+    validarCredenciales();
+
+    const projectId = options.project_id || 'ut';
+    const trackerId = options.tracker_id || '30';
+    const statusId = options.status_id || '*';
+    const limit = Math.min(options.limit || 100, 100);
+
+    const params = new URLSearchParams({
+        project_id: projectId,
+        tracker_id: trackerId,
+        status_id: statusId,
+        limit: limit.toString(),
+        key: REDMINE_TOKEN
+    });
+
+    const baseUrl = REDMINE_URL.replace(/\/+$/, '');
+    const url = `${baseUrl}/issues.json?${params.toString()}`;
+    const urlLog = url.replace(/key=[^&]+/, 'key=***');
+    console.log(`🔍 Consultando Redmine (requerimientos clientes): ${urlLog}`);
+    console.log(`   ⚠️ SOLO CONSULTA - No se realizan modificaciones`);
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Catalogo-NodeJS/1.0'
+        }
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error HTTP en requerimientos clientes:', response.status);
+        console.error('📄 Respuesta:', errorText.substring(0, 500));
+        throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const issues = data.issues || [];
+    console.log(`✅ Issues obtenidos (requerimientos clientes): ${issues.length}`);
+    return issues.map(mapearIssueReqClientes);
 }
 
 /**
@@ -820,12 +909,14 @@ module.exports = {
     obtenerIssuesMapeados,
     obtenerIssuesPorIds,
     obtenerIssuesProyectosInternos,
+    obtenerIssuesReqClientes,
     obtenerProjectIdPorNombre,
     obtenerIssuesPorNombreProyecto,
     obtenerIssuesMapeadosPorNombreProyecto,
     listarProyectos,
     mapearIssue,
     mapearIssueProyectosInternos,
+    mapearIssueReqClientes,
     probarConexion,
     obtenerProyectos,
     obtenerProyectosMapeados,

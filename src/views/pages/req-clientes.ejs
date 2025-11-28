@@ -11,7 +11,7 @@
     <header class="top-header">
         <div style="display: flex; align-items: center; gap: 12px;">
             <img src="/images/logo.png" alt="Logo" style="height: 28px; width: auto; display: block;" onerror="this.style.display='none';" />
-            <span onclick="window.location.href='/req-clientes'" style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">Catálogo</span>
+            <span onclick="window.location.href='/req-clientes'" style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">Catálogo Unitrade</span>
         </div>
     </header>
     
@@ -19,25 +19,456 @@
         <%- include('../partials/sidebar', { activeMenu: 'req-clientes' }) %>
         
         <div class="main-content">
-            <!-- Contenido -->
-            <div class="content-area" style="padding-top: 0;">
-                <div class="empty-state" style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
-                    <div class="empty-state-icon" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3;">
-                        📋
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left" style="display: flex; align-items: center; gap: 8px;">
+                    <!-- Botones de filtro -->
+                    <div style="position: relative; margin-right: 12px;">
+                        <button class="filter-btn <%= (typeof filtros.secciones !== 'undefined' && filtros.secciones.length > 0) ? 'filter-btn-active' : '' %>" onclick="toggleFilterSecciones()" title="Filtrar por Sección">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;">
+                                <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+                            </svg>
+                            <span style="margin-left: 6px; font-size: 13px;">Sección</span>
+                        </button>
+                        <div class="filter-dropdown" id="filterSecciones" style="display: none;">
+                            <% secciones.forEach(seccion => { %>
+                                <label style="display: flex; align-items: center; padding: 10px 16px; cursor: pointer; transition: background 0.2s;" 
+                                       onmouseover="this.style.background='#f1f3f4'" 
+                                       onmouseout="this.style.background='white'">
+                                    <input 
+                                        type="checkbox" 
+                                        class="filter-checkbox-seccion" 
+                                        value="<%= seccion %>"
+                                        <%= (typeof filtros.secciones !== 'undefined' && filtros.secciones.includes(seccion)) ? 'checked' : '' %>
+                                        style="margin-right: 8px; cursor: pointer;"
+                                        onchange="aplicarFiltros()"
+                                    />
+                                    <span style="font-size: 13px;"><%= seccion %></span>
+                                </label>
+                            <% }) %>
+                        </div>
                     </div>
-                    <div class="empty-state-text" style="font-size: 24px; margin-bottom: 8px; color: var(--text-primary); font-weight: 500;">
-                        Próximamente
+                    
+                </div>
+                
+                <div class="toolbar-right" style="display: flex; align-items: center; gap: 12px; flex: 1; justify-content: center;">
+                    <!-- Buscador estilo Google con botón de sincronización -->
+                    <div style="display: flex; align-items: center; gap: 8px; max-width: 600px; width: 100%; margin: 0 auto;">
+                        <div style="position: relative; flex: 1;">
+                            <form onsubmit="buscar(event)" class="google-search-box" style="position: relative;">
+                                <div style="display: flex; align-items: center; background: white; border: 1px solid #dfe1e5; border-radius: 24px; padding: 0 16px; height: 44px; box-shadow: 0 2px 5px 1px rgba(64,60,67,.16); transition: all 0.2s;" id="searchBoxContainer">
+                                    <svg style="width: 20px; height: 20px; color: #9aa0a6; margin-right: 12px; flex-shrink: 0;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                                    </svg>
+                                    <textarea 
+                                        id="searchInput" 
+                                        class="google-search-input"
+                                        rows="1"
+                                        placeholder="Buscar requerimientos..."
+                                        autocomplete="off"
+                                        autocapitalize="off"
+                                        autocorrect="off"
+                                        spellcheck="false"
+                                        style="flex: 1; border: none; outline: none; font-size: 16px; font-family: 'Google Sans', 'Roboto', sans-serif; resize: none; overflow: hidden; padding: 0; margin: 0; background: transparent; line-height: 44px; max-height: 44px;"
+                                        oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight, 44)+'px'; buscarSugerencias(this.value); actualizarBotonLimpiar();"
+                                        onfocus="document.getElementById('searchBoxContainer').style.boxShadow='0 2px 8px 1px rgba(64,60,67,.24)'; document.getElementById('searchBoxContainer').style.borderColor='transparent';"
+                                        onblur="setTimeout(() => { document.getElementById('searchBoxContainer').style.boxShadow='0 2px 5px 1px rgba(64,60,67,.16)'; document.getElementById('searchBoxContainer').style.borderColor='#dfe1e5'; }, 200);"
+                                    ><%= typeof filtros !== 'undefined' && filtros.busqueda ? filtros.busqueda : '' %></textarea>
+                                    <% if (typeof filtros !== 'undefined' && filtros.busqueda) { %>
+                                        <button onclick="limpiarBusqueda()" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; margin-left: 8px; color: #5f6368;" title="Limpiar búsqueda">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                            </svg>
+                                        </button>
+                                    <% } %>
+                                </div>
+                                <!-- Sugerencias -->
+                                <div id="searchSuggestions" class="google-search-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #dfe1e5; border-radius: 0 0 24px 24px; box-shadow: 0 4px 6px rgba(32,33,36,.28); margin-top: -1px; z-index: 1000; max-height: 400px; overflow-y: auto;">
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Botón de sincronización (solo admin puede usar) -->
+                        <button onclick="<%= isAdmin ? 'sincronizarReqClientes()' : 'alert(\'Solo administradores pueden sincronizar con Redmine\')' %>" title="<%= isAdmin ? 'Sincronizar con Redmine (SOLO CONSULTA)' : 'Solo administradores pueden sincronizar' %>" id="syncButton" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #dfe1e5; background: <%= isAdmin ? 'white' : '#f1f3f4' %>; cursor: <%= isAdmin ? 'pointer' : 'not-allowed' %>; transition: all 0.2s; flex-shrink: 0;<%= isAdmin ? '' : ' opacity: 0.5;' %>" onmouseover="<%= isAdmin ? 'this.style.background=\'#f1f3f4\'' : '' %>" onmouseout="<%= isAdmin ? 'this.style.background=\'white\'' : '' %>">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: #5f6368;">
+                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.81 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="empty-state-subtext" style="font-size: 16px; color: var(--text-secondary); max-width: 500px; margin: 0 auto;">
-                        Esta sección está en desarrollo. Pronto podrás gestionar requerimientos de clientes aquí.
+                    
+                    <div class="view-toggle">
+                        <button class="view-btn <%= vista === 'lista' ? 'active' : '' %>" onclick="cambiarVista('lista')" title="Vista de lista">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M4 14h4v-4H4v4zm0 5h4v-4H4v4zM4 9h4V5H4v4zm5 5h12v-4H9v4zm0 5h12v-4H9v4zM9 5v4h12V5H9z"/>
+                            </svg>
+                        </button>
+                        <button class="view-btn <%= vista === 'tarjetas' ? 'active' : '' %>" onclick="cambiarVista('tarjetas')" title="Vista de tarjetas">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M4 11h5V5H4v6zm0 7h5v-6H4v6zm6 0h5v-6h-5v6zm6 0h5v-6h-5v6zm-6-7h5V5h-5v6zm6-6v6h5V5h-5z"/>
+                            </svg>
+                        </button>
                     </div>
+                    
+                    <span class="text-muted text-small">
+                        <%= requerimientos.length %> requerimientos
+                    </span>
                 </div>
             </div>
+            
+            <!-- Filtros aplicados (debajo del toolbar) -->
+            <% if (typeof filtros.secciones !== 'undefined' && filtros.secciones.length > 0) { %>
+                <div style="padding: 12px 24px; background: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <!-- Chips de filtros aplicados -->
+                        <% filtros.secciones.forEach(seccion => { %>
+                            <div class="filter-chip" style="display: inline-flex; align-items: center; background: #e8f0fe; color: var(--primary-color); padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500; gap: 8px;">
+                                <span>Sección: <%= seccion %></span>
+                                <button onclick="removerFiltroSeccion('<%= seccion %>')" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; color: var(--primary-color);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        <% }) %>
+                    
+                    <button onclick="limpiarFiltros()" style="background: rgb(241, 243, 244); border: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; padding: 6px 12px; border-radius: 16px; transition: background 0.2s;" onmouseover="this.style.background='#e8eaed'" onmouseout="this.style.background='rgb(241, 243, 244)'">
+                        Borrar filtros
+                    </button>
+                </div>
+            <% } %>
+            
+            <!-- Contenido -->
+            <div class="content-area">
+                <% if (requerimientos.length === 0) { %>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">No se encontraron requerimientos de clientes</div>
+                        <div class="empty-state-subtext">Los requerimientos se sincronizan manualmente desde Redmine</div>
+                    </div>
+                <% } else if (vista === 'lista') { %>
+                    <!-- Vista de Lista -->
+                    <div class="list-view proyectos-internos">
+                        <div class="list-header req-clientes">
+                            <div onclick="ordenar('titulo')" style="cursor: pointer;" data-sort="titulo">
+                                Título
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </div>
+                            <div class="desktop-only">
+                                Proyecto
+                            </div>
+                            <div onclick="ordenar('seccion')" style="cursor: pointer;" data-sort="seccion">
+                                Sección
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </div>
+                            <div class="desktop-only">
+                                Estado
+                            </div>
+                            <div class="desktop-only">
+                                Redmine
+                            </div>
+                            <div onclick="ordenar('score_total')" style="cursor: pointer;" data-sort="score_total" class="<%= (typeof filtros !== 'undefined' && (!filtros.orden || filtros.orden === 'score_total')) ? 'sorted' : '' %>">
+                                Score
+                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <% requerimientos.forEach(requerimiento => { %>
+                            <div class="list-item req-clientes" onclick='verDetalle(<%- JSON.stringify(requerimiento.redmine_id || requerimiento.id) %>)'>
+                                <div class="item-title">
+                                    <div>
+                                        <div><%= requerimiento.titulo || 'Sin título' %></div>
+                                        <% if (requerimiento.descripcion) { %>
+                                            <div class="text-small text-muted text-truncate" style="max-width: 400px;">
+                                                <%= requerimiento.descripcion %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <div class="item-text desktop-only">
+                                    <%= requerimiento.proyecto_completo || '-' %>
+                                </div>
+                                <div class="item-text"><%= requerimiento.seccion || '-' %></div>
+                                <div class="item-text desktop-only">
+                                    <%= requerimiento.estado_redmine || '-' %>
+                                </div>
+                                <div class="item-text desktop-only">
+                                    <% if (requerimiento.redmine_id) { 
+                                        const baseUrl = (redmineBaseUrl || 'https://redmine.mercap.net').replace(/\/+$/, '');
+                                        const epicUrl = `${baseUrl}/issues/${requerimiento.redmine_id}`;
+                                    %>
+                                        <a href="<%= epicUrl %>" target="_blank" onclick="event.stopPropagation();" style="color: var(--primary-color); text-decoration: none;">
+                                            Ver en Redmine
+                                        </a>
+                                    <% } else { %>
+                                        -
+                                    <% } %>
+                                </div>
+                                <div>
+                                    <% 
+                                    let score = requerimiento.score_calculado || requerimiento.score_total || 0;
+                                    score = parseFloat(score) || 0;
+                                    let scoreClass = 'score-low';
+                                    if (score > 6.50) scoreClass = 'score-high';
+                                    else if (score > 4) scoreClass = 'score-medium';
+                                    %>
+                                    <span class="score-badge <%= scoreClass %>">
+                                        <%= score.toFixed(1) %>
+                                    </span>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <!-- Vista de Tarjetas -->
+                    <div class="cards-view">
+                        <% requerimientos.forEach(requerimiento => { %>
+                            <div class="card" onclick='verDetalle(<%- JSON.stringify(requerimiento.redmine_id || requerimiento.id) %>)'>
+                                <div class="card-header">
+                                    <h3 class="card-title"><%= requerimiento.titulo || 'Sin título' %></h3>
+                                    <button class="card-menu" onclick='event.stopPropagation(); eliminarRequerimiento(<%- JSON.stringify(requerimiento.redmine_id || requerimiento.id) %>)'>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                                <% if (requerimiento.descripcion) { %>
+                                    <p class="card-description"><%= requerimiento.descripcion %></p>
+                                <% } %>
+                                
+                                <div class="card-meta">
+                                    <% if (requerimiento.seccion) { %>
+                                        <span class="card-tag">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+                                            </svg>
+                                            <%= requerimiento.seccion %>
+                                        </span>
+                                    <% } %>
+                                    
+                                    <% 
+                                    let score = requerimiento.score_calculado || requerimiento.score_total || 0;
+                                    score = parseFloat(score) || 0;
+                                    let scoreClass = 'score-low';
+                                    if (score > 6.50) scoreClass = 'score-high';
+                                    else if (score > 4) scoreClass = 'score-medium';
+                                    %>
+                                    <span class="score-badge <%= scoreClass %>">
+                                        ⭐ <%= score.toFixed(1) %>
+                                    </span>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
         </div>
-    </div>
+        </div>
     
-    <!-- JavaScript -->
     <script src="/js/main.js"></script>
+    <script>
+        // Función para buscar sugerencias
+        let timeoutSugerencias;
+        async function buscarSugerencias(query) {
+            clearTimeout(timeoutSugerencias);
+            
+            const suggestionsContainer = document.getElementById('searchSuggestions');
+            if (!query || query.length < 2) {
+                if (suggestionsContainer) {
+                    suggestionsContainer.style.display = 'none';
+                }
+                return;
+            }
+            
+            timeoutSugerencias = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/req-clientes/sugerencias?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.sugerencias && data.sugerencias.length > 0) {
+                        const html = data.sugerencias.map(requerimiento => `
+                            <div class="google-suggestion-item" onclick="aplicarFiltroBusqueda('${requerimiento.titulo.replace(/'/g, "\\'")}')" onmouseover="this.style.backgroundColor='#f1f3f4'" onmouseout="this.style.backgroundColor='white'">
+                                <svg style="width: 20px; height: 20px; color: #9aa0a6; margin-right: 12px; flex-shrink: 0;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                                </svg>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 14px; color: #202124; font-weight: 400;">${requerimiento.titulo}</div>
+                                    ${requerimiento.seccion ? `<div style="font-size: 12px; color: #5f6368; margin-top: 2px;">${requerimiento.seccion}</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        suggestionsContainer.innerHTML = html;
+                        suggestionsContainer.style.display = 'block';
+                    } else {
+                        suggestionsContainer.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error al obtener sugerencias:', error);
+                    suggestionsContainer.style.display = 'none';
+                }
+            }, 300);
+        }
+        
+        function aplicarFiltroBusqueda(texto) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('busqueda', texto);
+            window.location.search = params.toString();
+        }
+        
+        // Cerrar sugerencias al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            const searchBox = document.querySelector('.google-search-box');
+            const suggestions = document.getElementById('searchSuggestions');
+            if (searchBox && suggestions && !searchBox.contains(e.target)) {
+                setTimeout(() => {
+                    suggestions.style.display = 'none';
+                }, 200);
+            }
+        });
+        
+        // Ajustar altura del textarea automáticamente
+        document.addEventListener('DOMContentLoaded', () => {
+            const textarea = document.getElementById('searchInput');
+            if (textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = '44px';
+            }
+            
+            // Expandir sidebar por defecto en requerimientos clientes
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.sidebar-toggle');
+            if (sidebar && sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                if (toggle) {
+                    toggle.style.left = 'calc(var(--sidebar-width) - 16px)';
+                }
+                // Actualizar localStorage para mantener el estado expandido
+                localStorage.setItem('sidebarCollapsed', 'false');
+            }
+        });
+        
+        function verDetalle(id) {
+            if (!id) return;
+            window.location.href = `/req-clientes/${encodeURIComponent(id)}`;
+        }
+        
+        function limpiarBusqueda() {
+            const params = new URLSearchParams(window.location.search);
+            params.delete('busqueda');
+            window.location.search = params.toString();
+        }
+        
+        function actualizarBotonLimpiar() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBox = document.getElementById('searchBoxContainer');
+            if (!searchInput || !searchBox) return;
+            
+            // Buscar o crear botón de limpiar
+            let clearBtn = searchBox.querySelector('.clear-search-btn');
+            if (!clearBtn && searchInput.value.trim()) {
+                clearBtn = document.createElement('button');
+                clearBtn.className = 'clear-search-btn';
+                clearBtn.onclick = (e) => { e.stopPropagation(); limpiarBusqueda(); };
+                clearBtn.style.cssText = 'background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; margin-left: 8px; color: #5f6368;';
+                clearBtn.title = 'Limpiar búsqueda';
+                clearBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+                searchBox.appendChild(clearBtn);
+            } else if (clearBtn && !searchInput.value.trim()) {
+                clearBtn.remove();
+            }
+        }
+        
+        function eliminarRequerimiento(id) {
+            if (confirm('¿Estás seguro de eliminar este requerimiento?')) {
+                fetch(`/req-clientes/${encodeURIComponent(id)}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error al eliminar el requerimiento');
+                    }
+                });
+            }
+        }
+        
+        // Funciones de filtros y ordenamiento (similares a proyectos internos)
+        function toggleFilterSecciones() {
+            const dropdown = document.getElementById('filterSecciones');
+            if (dropdown) {
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+        
+        function aplicarFiltros() {
+            const checkboxes = document.querySelectorAll('.filter-checkbox-seccion:checked');
+            const secciones = Array.from(checkboxes).map(cb => cb.value);
+            const params = new URLSearchParams(window.location.search);
+            
+            if (secciones.length > 0) {
+                params.delete('secciones');
+                secciones.forEach(seccion => {
+                    params.append('secciones', seccion);
+                });
+            } else {
+                params.delete('secciones');
+            }
+            
+            window.location.search = params.toString();
+        }
+        
+        function removerFiltroSeccion(seccion) {
+            const params = new URLSearchParams(window.location.search);
+            const secciones = params.getAll('secciones').filter(s => s !== seccion);
+            params.delete('secciones');
+            secciones.forEach(s => params.append('secciones', s));
+            window.location.search = params.toString();
+        }
+        
+        function limpiarFiltros() {
+            window.location.search = '';
+        }
+        
+        function ordenar(campo) {
+            const params = new URLSearchParams(window.location.search);
+            const ordenActual = params.get('orden');
+            const direccionActual = params.get('direccion') || 'desc';
+            
+            if (ordenActual === campo) {
+                params.set('direccion', direccionActual === 'asc' ? 'desc' : 'asc');
+            } else {
+                params.set('orden', campo);
+                params.set('direccion', 'desc');
+            }
+            
+            window.location.search = params.toString();
+        }
+        
+        function cambiarVista(vista) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('vista', vista);
+            window.location.search = params.toString();
+        }
+        
+        function buscar(event) {
+            event.preventDefault();
+            const query = document.getElementById('searchInput').value.trim();
+            const params = new URLSearchParams(window.location.search);
+            if (query) {
+                params.set('busqueda', query);
+            } else {
+                params.delete('busqueda');
+            }
+            window.location.search = params.toString();
+        }
+    </script>
 </body>
 </html>
-

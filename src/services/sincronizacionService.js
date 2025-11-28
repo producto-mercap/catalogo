@@ -354,9 +354,190 @@ async function obtenerEstadoSincronizacion() {
     }
 }
 
+/**
+ * Sincronizar issues de Requerimientos de Clientes desde Redmine
+ * ⚠️ SOLO CONSULTAS - No se realizan modificaciones en Redmine
+ * @param {string} tracker_id - ID del tracker (opcional, default 30)
+ * @param {number} maxTotal - Límite máximo de issues a sincronizar (null = sin límite)
+ * @returns {Promise<Object>} - Resultado de la sincronización
+ */
+async function sincronizarReqClientes(tracker_id = null, maxTotal = null) {
+    const REQ_CLIENTES_PROJECT_ID = 'ut';
+    const DEFAULT_TRACKER_ID = '30';
+    const DEFAULT_STATUS_ID = '*';
+    
+    // Usar tracker_id por defecto si no se especifica
+    const trackerIdFinal = tracker_id || DEFAULT_TRACKER_ID;
+    
+    // Limitar siempre a 100 resultados por request (requerimiento)
+    const requestedLimit = maxTotal ? parseInt(maxTotal, 10) : 100;
+    const limitFinal = Math.min(isNaN(requestedLimit) ? 100 : requestedLimit, 100);
+    if (requestedLimit !== limitFinal) {
+        console.log(`⚠️ Límite solicitado (${requestedLimit}) supera 100. Se usará ${limitFinal}.`);
+    }
+    
+    console.log('\n🔄 =================================');
+    console.log('   INICIANDO SINCRONIZACIÓN REQUERIMIENTOS CLIENTES');
+    console.log('   =================================\n');
+    console.log(`   Proyecto ID: ${REQ_CLIENTES_PROJECT_ID}`);
+    console.log(`   Tracker ID: ${trackerIdFinal}`);
+    console.log(`   Status ID: ${DEFAULT_STATUS_ID}`);
+    console.log(`   Límite: ${limitFinal}`);
+    console.log(`   ⚠️ SOLO CONSULTA - No se realizan modificaciones en Redmine\n`);
+    
+    try {
+        // 1. Obtener issues de Redmine usando filtros
+        console.log('📥 Paso 1: Obteniendo issues de Redmine (SOLO CONSULTA)...');
+        const issuesMapeados = await redmineService.obtenerIssuesReqClientes({
+            project_id: REQ_CLIENTES_PROJECT_ID,
+            tracker_id: trackerIdFinal,
+            status_id: DEFAULT_STATUS_ID,
+            limit: limitFinal
+        });
+        
+        if (issuesMapeados.length === 0) {
+            console.log('⚠️ No se encontraron issues para sincronizar');
+            return {
+                success: true,
+                message: 'No hay issues para sincronizar',
+                insertados: 0,
+                actualizados: 0,
+                total: 0
+            };
+        }
+
+        console.log(`✅ ${issuesMapeados.length} issues obtenidos de Redmine\n`);
+
+        // 2. Insertar/actualizar en redmine_req_clientes
+        console.log('💾 Paso 2: Guardando issues en la base de datos...');
+        console.log('   ⚠️ Validando que proyecto_completo no exista en redmine_issues...\n');
+        
+        let insertados = 0;
+        let actualizados = 0;
+        let omitidos = 0;
+
+        for (const issue of issuesMapeados) {
+            try {
+                // Validar si el proyecto_completo existe en redmine_issues.titulo
+                if (issue.proyecto_completo) {
+                    const validacion = await query(`
+                        SELECT COUNT(*) as existe
+                        FROM redmine_issues
+                        WHERE titulo = $1
+                    `, [issue.proyecto_completo]);
+                    
+                    if (parseInt(validacion.rows[0].existe) > 0) {
+                        console.log(`   ⚠️ Omitiendo issue ${issue.redmine_id}: proyecto_completo "${issue.proyecto_completo}" ya existe en redmine_issues`);
+                        omitidos++;
+                        continue;
+                    }
+                }
+                
+                const result = await query(`
+                    INSERT INTO redmine_req_clientes (
+                        redmine_id, titulo, proyecto_completo, fecha_creacion, 
+                        fecha_real_finalizacion, total_spent_hours, estado_redmine, sincronizado_en
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+                    ON CONFLICT (redmine_id) 
+                    DO UPDATE SET
+                        titulo = EXCLUDED.titulo,
+                        proyecto_completo = EXCLUDED.proyecto_completo,
+                        fecha_creacion = EXCLUDED.fecha_creacion,
+                        fecha_real_finalizacion = EXCLUDED.fecha_real_finalizacion,
+                        total_spent_hours = EXCLUDED.total_spent_hours,
+                        estado_redmine = EXCLUDED.estado_redmine,
+                        sincronizado_en = CURRENT_TIMESTAMP
+                    RETURNING (xmax = 0) AS inserted
+                `, [
+                    issue.redmine_id,
+                    issue.titulo,
+                    issue.proyecto_completo,
+                    issue.fecha_creacion,
+                    issue.fecha_real_finalizacion,
+                    issue.total_spent_hours,
+                    issue.estado_redmine
+                ]);
+
+                // xmax = 0 significa que fue INSERT, xmax != 0 significa UPDATE
+                if (result.rows[0].inserted) {
+                    insertados++;
+                } else {
+                    actualizados++;
+                }
+            } catch (error) {
+                console.error(`❌ Error al guardar issue ${issue.redmine_id}:`, error.message);
+            }
+        }
+
+        console.log(`✅ Issues guardados: ${insertados} insertados, ${actualizados} actualizados, ${omitidos} omitidos (proyecto_completo existe en redmine_issues)\n`);
+
+        // 3. Crear requerimientos para issues nuevos
+        console.log('🔄 Paso 3: Creando requerimientos de clientes para issues nuevos...');
+        console.log('   ⚠️ Validando nuevamente que proyecto_completo no exista en redmine_issues...\n');
+        
+        const syncResult = await query(`
+            INSERT INTO req_clientes (
+                redmine_id,
+                seccion
+            )
+            SELECT 
+                r.redmine_id,
+                NULL
+            FROM redmine_req_clientes r
+            WHERE NOT EXISTS (
+                SELECT 1 FROM req_clientes b WHERE b.redmine_id = r.redmine_id
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM redmine_issues ri 
+                WHERE ri.titulo = r.proyecto_completo 
+                AND r.proyecto_completo IS NOT NULL
+            )
+            RETURNING id, redmine_id;
+        `);
+
+        const requerimientosNuevos = syncResult.rowCount;
+        
+        console.log(`✅ ${requerimientosNuevos} requerimientos nuevos creados (vacíos)\n`);
+
+        // 4. NO actualizar requerimientos existentes
+        // Los datos editables (descripcion, seccion, monto, score) SIEMPRE persisten
+        console.log('ℹ️ Requerimientos existentes NO se actualizan (datos editables persisten)\n');
+
+        console.log('🎉 =================================');
+        console.log('   SINCRONIZACIÓN REQUERIMIENTOS CLIENTES COMPLETADA');
+        console.log('   =================================\n');
+
+        return {
+            success: true,
+            message: 'Sincronización de requerimientos de clientes completada exitosamente',
+            redmine_req_clientes: {
+                insertados,
+                actualizados,
+                omitidos,
+                total: issuesMapeados.length
+            },
+            req_clientes: {
+                nuevos: requerimientosNuevos,
+                actualizados: actualizados
+            }
+        };
+
+    } catch (error) {
+        console.error('\n❌ ERROR EN SINCRONIZACIÓN REQUERIMIENTOS CLIENTES:', error.message);
+        console.error('   Stack:', error.stack);
+        
+        return {
+            success: false,
+            message: 'Error en la sincronización de requerimientos de clientes',
+            error: error.message
+        };
+    }
+}
+
 module.exports = {
     sincronizarRedmine,
     sincronizarProyectosInternos,
+    sincronizarReqClientes,
     obtenerEstadoSincronizacion
 };
 

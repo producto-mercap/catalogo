@@ -719,6 +719,35 @@ select.btn:focus {
     grid-template-columns: 2fr 150px 100px 100px 100px 120px 80px;
 }
 
+/* Grid específico para requerimientos de clientes (con Proyecto antes de Sección) */
+.req-clientes.list-header,
+.req-clientes.list-item {
+    grid-template-columns: 2fr 220px 150px 100px 120px 80px;
+}
+
+/* Asegurar que todos los divs respeten el ancho del grid */
+.req-clientes.list-header > div,
+.req-clientes.list-item > div {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Centrar todos los headers en req-clientes (excepto Título) */
+.req-clientes.list-header > div:not(:first-child) {
+    justify-content: center;
+    text-align: center;
+    display: flex;
+    align-items: center;
+}
+
+/* Centrar todos los valores en req-clientes (excepto Título) */
+.req-clientes.list-item > div:not(:first-child) {
+    justify-content: center;
+    text-align: center;
+    display: flex;
+    align-items: center;
+}
+
 .list-header > div {
     display: flex;
     align-items: center;

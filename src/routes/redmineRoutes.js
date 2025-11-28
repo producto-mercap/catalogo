@@ -151,6 +151,30 @@ router.get('/proyectos', requireAdmin, async (req, res) => {
 });
 
 /**
+ * POST /api/redmine/sincronizar-req-clientes
+ * Sincronizar requerimientos de clientes desde Redmine
+ * ⚠️ Requiere permisos de administrador
+ * ⚠️ SOLO CONSULTAS - No se realizan modificaciones en Redmine
+ */
+router.post('/sincronizar-req-clientes', requireAdmin, async (req, res) => {
+    try {
+        const { tracker_id = null, max_total = null } = req.body;
+        const maxTotal = max_total ? parseInt(max_total) : null;
+        
+        console.log(`\n🔄 Iniciando sincronización requerimientos clientes: tracker=${tracker_id || '30'}, límite=${maxTotal || '100'}`);
+        console.log(`   ⚠️ SOLO CONSULTA - No se realizan modificaciones en Redmine`);
+        
+        const resultado = await sincronizacionService.sincronizarReqClientes(tracker_id, maxTotal);
+        res.json(resultado);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
  * GET /api/redmine/estado
  * Obtener estado de la sincronización
  */
