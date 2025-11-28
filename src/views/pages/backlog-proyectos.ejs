@@ -11,12 +11,12 @@
     <header class="top-header">
         <div style="display: flex; align-items: center; gap: 12px;">
             <img src="/images/logo.png" alt="Logo" style="height: 28px; width: auto; display: block;" onerror="this.style.display='none';" />
-            <span onclick="window.location.href='/backlog-proyectos'" style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">Catálogo</span>
+            <span onclick="window.location.href='/proyectos-internos'" style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">Catálogo Unitrade</span>
         </div>
     </header>
     
     <div class="app-container" style="margin-top: 0;">
-        <%- include('../partials/sidebar', { activeMenu: 'backlog-proyectos' }) %>
+        <%- include('../partials/sidebar', { activeMenu: 'proyectos-internos' }) %>
         
         <div class="main-content">
             <!-- Toolbar -->
@@ -70,10 +70,17 @@
                                         autocorrect="off"
                                         spellcheck="false"
                                         style="flex: 1; border: none; outline: none; font-size: 16px; font-family: 'Google Sans', 'Roboto', sans-serif; resize: none; overflow: hidden; padding: 0; margin: 0; background: transparent; line-height: 44px; max-height: 44px;"
-                                        oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight, 44)+'px'; buscarSugerencias(this.value);"
+                                        oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight, 44)+'px'; buscarSugerencias(this.value); actualizarBotonLimpiar();"
                                         onfocus="document.getElementById('searchBoxContainer').style.boxShadow='0 2px 8px 1px rgba(64,60,67,.24)'; document.getElementById('searchBoxContainer').style.borderColor='transparent';"
                                         onblur="setTimeout(() => { document.getElementById('searchBoxContainer').style.boxShadow='0 2px 5px 1px rgba(64,60,67,.16)'; document.getElementById('searchBoxContainer').style.borderColor='#dfe1e5'; }, 200);"
                                     ><%= typeof filtros !== 'undefined' && filtros.busqueda ? filtros.busqueda : '' %></textarea>
+                                    <% if (typeof filtros !== 'undefined' && filtros.busqueda) { %>
+                                        <button onclick="limpiarBusqueda()" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; margin-left: 8px; color: #5f6368;" title="Limpiar búsqueda">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                            </svg>
+                                        </button>
+                                    <% } %>
                                 </div>
                                 <!-- Sugerencias -->
                                 <div id="searchSuggestions" class="google-search-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #dfe1e5; border-radius: 0 0 24px 24px; box-shadow: 0 4px 6px rgba(32,33,36,.28); margin-top: -1px; z-index: 1000; max-height: 400px; overflow-y: auto;">
@@ -82,8 +89,8 @@
                         </div>
                         
                         <!-- Botón de sincronización (solo admin puede usar) -->
-                        <button class="icon-button" onclick="<%= isAdmin ? 'sincronizarBacklog()' : 'alert(\'Solo administradores pueden sincronizar con Redmine\')' %>" title="<%= isAdmin ? 'Sincronizar con Redmine' : 'Solo administradores pueden sincronizar' %>" id="syncButton" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: none; background: <%= isAdmin ? '#316ba1' : '#9aa0a6' %>; cursor: <%= isAdmin ? 'pointer' : 'not-allowed' %>; transition: all 0.2s; flex-shrink: 0;<%= isAdmin ? '' : ' opacity: 0.5;' %>" onmouseover="<%= isAdmin ? 'this.style.background=\'#2a5a8a\'' : '' %>" onmouseout="<%= isAdmin ? 'this.style.background=\'#316ba1\'' : '' %>">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: white;">
+                        <button onclick="<%= isAdmin ? 'sincronizarProyectosInternos()' : 'alert(\'Solo administradores pueden sincronizar con Redmine\')' %>" title="<%= isAdmin ? 'Sincronizar con Redmine' : 'Solo administradores pueden sincronizar' %>" id="syncButton" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #dfe1e5; background: <%= isAdmin ? 'white' : '#f1f3f4' %>; cursor: <%= isAdmin ? 'pointer' : 'not-allowed' %>; transition: all 0.2s; flex-shrink: 0;<%= isAdmin ? '' : ' opacity: 0.5;' %>" onmouseover="<%= isAdmin ? 'this.style.background=\'#f1f3f4\'' : '' %>" onmouseout="<%= isAdmin ? 'this.style.background=\'white\'' : '' %>">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: #5f6368;">
                                 <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.81 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
                             </svg>
                         </button>
@@ -134,14 +141,14 @@
                 <% if (proyectos.length === 0) { %>
                     <div class="empty-state">
                         <div class="empty-state-icon">📋</div>
-                        <div class="empty-state-text">No se encontraron proyectos en el backlog</div>
+                        <div class="empty-state-text">No se encontraron proyectos internos</div>
                         <div class="empty-state-subtext">Los proyectos se sincronizarán automáticamente desde Redmine próximamente</div>
                     </div>
                 <% } else if (vista === 'lista') { %>
                     <!-- Vista de Lista -->
-                    <div class="list-view">
+                    <div class="list-view proyectos-internos">
                         <div class="list-header">
-                            <div onclick="ordenar('titulo')" style="cursor: pointer;" data-sort="titulo">
+                            <div onclick="ordenar('titulo')" style="cursor: pointer; text-align: center;" data-sort="titulo">
                                 Título
                                 <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M7 10l5 5 5-5z"/>
@@ -159,11 +166,14 @@
                                     <path d="M7 10l5 5 5-5z"/>
                                 </svg>
                             </div>
-                            <div onclick="ordenar('epic_redmine')" style="cursor: pointer;" class="desktop-only" data-sort="epic_redmine">
-                                Epic Redmine
-                                <svg class="sort-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M7 10l5 5 5-5z"/>
-                                </svg>
+                            <div class="desktop-only">
+                                Estado
+                            </div>
+                            <div class="desktop-only">
+                                Services ID
+                            </div>
+                            <div class="desktop-only">
+                                Redmine
                             </div>
                             <div onclick="ordenar('score_total')" style="cursor: pointer;" data-sort="score_total" class="<%= (typeof filtros !== 'undefined' && (!filtros.orden || filtros.orden === 'score_total')) ? 'sorted' : '' %>">
                                 Score
@@ -176,9 +186,6 @@
                         <% proyectos.forEach(proyecto => { %>
                             <div class="list-item" onclick='verDetalle(<%- JSON.stringify(proyecto.redmine_id || proyecto.id) %>)'>
                                 <div class="item-title">
-                                    <div class="item-icon">
-                                        <%= (proyecto.titulo || '?').substring(0, 1).toUpperCase() %>
-                                    </div>
                                     <div>
                                         <div><%= proyecto.titulo || 'Sin título' %></div>
                                         <% if (proyecto.descripcion) { %>
@@ -197,8 +204,17 @@
                                     <% } %>
                                 </div>
                                 <div class="item-text desktop-only">
-                                    <% if (proyecto.epic_redmine) { %>
-                                        <a href="<%= proyecto.epic_redmine %>" target="_blank" onclick="event.stopPropagation();" style="color: var(--primary-color); text-decoration: none;">
+                                    <%= proyecto.estado_redmine || '-' %>
+                                </div>
+                                <div class="item-text desktop-only">
+                                    <%= proyecto.services_id || '-' %>
+                                </div>
+                                <div class="item-text desktop-only">
+                                    <% if (proyecto.redmine_id) { 
+                                        const baseUrl = (redmineBaseUrl || 'https://redmine.mercap.net').replace(/\/+$/, '');
+                                        const epicUrl = `${baseUrl}/issues/${proyecto.redmine_id}`;
+                                    %>
+                                        <a href="<%= epicUrl %>" target="_blank" onclick="event.stopPropagation();" style="color: var(--primary-color); text-decoration: none;">
                                             Ver en Redmine
                                         </a>
                                     <% } else { %>
@@ -284,7 +300,7 @@
             
             timeoutSugerencias = setTimeout(async () => {
                 try {
-                    const response = await fetch(`/api/backlog-proyectos/sugerencias?q=${encodeURIComponent(query)}`);
+                    const response = await fetch(`/api/proyectos-internos/sugerencias?q=${encodeURIComponent(query)}`);
                     const data = await response.json();
                     
                     if (data.success && data.sugerencias && data.sugerencias.length > 0) {
@@ -337,7 +353,7 @@
                 textarea.style.height = '44px';
             }
             
-            // Expandir sidebar por defecto en backlog-proyectos
+            // Expandir sidebar por defecto en proyectos internos
             const sidebar = document.getElementById('sidebar');
             const toggle = document.querySelector('.sidebar-toggle');
             if (sidebar && sidebar.classList.contains('collapsed')) {
@@ -352,12 +368,38 @@
         
         function verDetalle(id) {
             if (!id) return;
-            window.location.href = `/backlog-proyectos/${encodeURIComponent(id)}`;
+            window.location.href = `/proyectos-internos/${encodeURIComponent(id)}`;
+        }
+        
+        function limpiarBusqueda() {
+            const params = new URLSearchParams(window.location.search);
+            params.delete('busqueda');
+            window.location.search = params.toString();
+        }
+        
+        function actualizarBotonLimpiar() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBox = document.getElementById('searchBoxContainer');
+            if (!searchInput || !searchBox) return;
+            
+            // Buscar o crear botón de limpiar
+            let clearBtn = searchBox.querySelector('.clear-search-btn');
+            if (!clearBtn && searchInput.value.trim()) {
+                clearBtn = document.createElement('button');
+                clearBtn.className = 'clear-search-btn';
+                clearBtn.onclick = (e) => { e.stopPropagation(); limpiarBusqueda(); };
+                clearBtn.style.cssText = 'background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; margin-left: 8px; color: #5f6368;';
+                clearBtn.title = 'Limpiar búsqueda';
+                clearBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+                searchBox.appendChild(clearBtn);
+            } else if (clearBtn && !searchInput.value.trim()) {
+                clearBtn.remove();
+            }
         }
         
         function eliminarProyecto(id) {
             if (confirm('¿Estás seguro de eliminar este proyecto?')) {
-                fetch(`/backlog-proyectos/${encodeURIComponent(id)}`, {
+                fetch(`/proyectos-internos/${encodeURIComponent(id)}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())

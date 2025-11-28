@@ -438,6 +438,58 @@ h3 {
     font-weight: 500;
 }
 
+/* Botón estándar estilo Google (según reglas de cursor) */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border-radius: 24px;
+    background: #1a73e8;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Google Sans', 'Roboto', sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    line-height: 1.5;
+    min-height: 40px;
+}
+
+.button:hover {
+    background: #1557b0;
+    box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+    text-decoration: none;
+    color: white;
+}
+
+.button:active {
+    background: #0d47a1;
+}
+
+/* Variante blanca con letras azules */
+.button.button-secondary {
+    background: white;
+    color: #1a73e8;
+    border: 1px solid #dadce0;
+}
+
+.button.button-secondary:hover {
+    background: #f1f3f4;
+    color: #1557b0;
+    border-color: #bdc1c6;
+    box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+}
+
+.button.button-secondary:active {
+    background: #e8eaed;
+    color: #0d47a1;
+}
+
+
 /* Botón estándar - Estilo Google Drive/Material Design */
 .btn {
     padding: 10px 24px;
@@ -661,6 +713,12 @@ select.btn:focus {
     border-bottom: 1px solid var(--border-color);
 }
 
+/* Grid específico para proyectos internos (con Estado y Services ID) */
+.proyectos-internos .list-header,
+.proyectos-internos .list-item {
+    grid-template-columns: 2fr 150px 100px 100px 100px 120px 80px;
+}
+
 .list-header > div {
     display: flex;
     align-items: center;
@@ -724,6 +782,11 @@ select.btn:focus {
     transition: all 0.2s;
     cursor: pointer;
     align-items: center;
+}
+
+/* Eliminar icono item-icon */
+.item-icon {
+    display: none !important;
 }
 
 .list-item:last-child {

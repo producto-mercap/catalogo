@@ -4,7 +4,7 @@ const FuncionalidadModel = require('../models/FuncionalidadModel');
 const ClienteModel = require('../models/ClienteModel');
 const ScoreModel = require('../models/ScoreModel');
 const MapaModel = require('../models/MapaModel');
-const BacklogProyectosModel = require('../models/BacklogProyectosModel');
+const ProyectosInternosModel = require('../models/ProyectosInternosModel');
 const ScoreBacklogModel = require('../models/ScoreBacklogModel');
 
 /**
@@ -142,9 +142,9 @@ router.get('/estadisticas', async (req, res) => {
 });
 
 /**
- * API de backlog proyectos
+ * API de proyectos internos
  */
-router.get('/backlog-proyectos', async (req, res) => {
+router.get('/proyectos-internos', async (req, res) => {
     try {
         const filtros = {
             busqueda: req.query.busqueda || '',
@@ -153,25 +153,25 @@ router.get('/backlog-proyectos', async (req, res) => {
             direccion: req.query.direccion || 'desc'
         };
         
-        const proyectos = await BacklogProyectosModel.obtenerTodas(filtros);
+        const proyectos = await ProyectosInternosModel.obtenerTodas(filtros);
         
         res.json({
             success: true,
             proyectos
         });
     } catch (error) {
-        console.error('Error en API backlog proyectos:', error);
+        console.error('Error en API proyectos internos:', error);
         res.status(500).json({
             success: false,
-            error: 'Error al obtener proyectos del backlog'
+            error: 'Error al obtener proyectos internos'
         });
     }
 });
 
 /**
- * API de sugerencias de búsqueda para backlog proyectos
+ * API de sugerencias de búsqueda para proyectos internos
  */
-router.get('/backlog-proyectos/sugerencias', async (req, res) => {
+router.get('/proyectos-internos/sugerencias', async (req, res) => {
     try {
         const query = req.query.q || '';
         
@@ -186,7 +186,7 @@ router.get('/backlog-proyectos/sugerencias', async (req, res) => {
             busqueda: query
         };
         
-        const proyectos = await BacklogProyectosModel.obtenerTodas(filtros);
+        const proyectos = await ProyectosInternosModel.obtenerTodas(filtros);
         
         // Limitar a 8 sugerencias
         const sugerencias = proyectos.slice(0, 8).map(proyecto => ({
@@ -200,7 +200,7 @@ router.get('/backlog-proyectos/sugerencias', async (req, res) => {
             sugerencias
         });
     } catch (error) {
-        console.error('Error en API sugerencias backlog:', error);
+        console.error('Error en API sugerencias proyectos internos:', error);
         res.status(500).json({
             success: false,
             error: 'Error al obtener sugerencias'
@@ -209,9 +209,9 @@ router.get('/backlog-proyectos/sugerencias', async (req, res) => {
 });
 
 /**
- * API de ranking de scores de backlog
+ * API de ranking de scores de proyectos internos
  */
-router.get('/backlog-proyectos/ranking', async (req, res) => {
+router.get('/proyectos-internos/ranking', async (req, res) => {
     try {
         const ranking = await ScoreBacklogModel.obtenerRanking();
         
@@ -220,7 +220,7 @@ router.get('/backlog-proyectos/ranking', async (req, res) => {
             ranking
         });
     } catch (error) {
-        console.error('Error en API ranking backlog:', error);
+        console.error('Error en API ranking proyectos internos:', error);
         res.status(500).json({
             success: false,
             error: 'Error al obtener ranking'

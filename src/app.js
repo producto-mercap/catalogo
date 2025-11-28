@@ -158,7 +158,7 @@ const scoreRoutes = require('./routes/scoreRoutes');
 const mapaRoutes = require('./routes/mapaRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 const redmineRoutes = require('./routes/redmineRoutes');
-const desarrollosRoutes = require('./routes/desarrollosRoutes');
+const proyectosInternosRoutes = require('./routes/proyectosInternosRoutes');
 const ideasMejorasRoutes = require('./routes/ideasMejorasRoutes');
 const authRoutes = require('./routes/authRoutes');
 
@@ -170,7 +170,11 @@ app.use('/', requireAuth, indexRoutes);
 app.use('/funcionalidades', requireAuth, funcionalidadesRoutes);
 app.use('/score', requireAuth, scoreRoutes);
 app.use('/mapa', requireAuth, mapaRoutes);
-app.use('/backlog-proyectos', requireAuth, desarrollosRoutes);
+app.use('/proyectos-internos', requireAuth, proyectosInternosRoutes);
+app.use('/backlog-proyectos', requireAuth, (req, res) => {
+    const suffix = req.url === '/' ? '' : req.url;
+    res.redirect(301, `/proyectos-internos${suffix}`);
+});
 app.use('/ideas-mejoras', requireAuth, ideasMejorasRoutes);
 app.use('/api', requireAuth, apiRoutes);
 app.use('/api/redmine', requireAuth, redmineRoutes);

@@ -10,10 +10,12 @@ class FuncionalidadModel {
             let query = `
                 SELECT 
                     v.*,
+                    f.titulo_personalizado,
                     s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado
                 FROM v_funcionalidades_completas v
+                LEFT JOIN funcionalidades f ON v.redmine_id = f.redmine_id
                 LEFT JOIN score s ON v.redmine_id = s.funcionalidad_id
                 WHERE 1=1
             `;
@@ -23,6 +25,7 @@ class FuncionalidadModel {
             // Filtro por búsqueda
             if (filtros.busqueda) {
                 query += ` AND (
+                    COALESCE(f.titulo_personalizado, v.titulo) ILIKE $${paramCount} OR 
                     v.titulo ILIKE $${paramCount} OR 
                     v.descripcion ILIKE $${paramCount} OR 
                     v.sponsor ILIKE $${paramCount} OR 
@@ -83,6 +86,7 @@ class FuncionalidadModel {
             const query = `
                 SELECT 
                     v.*,
+                    f.titulo_personalizado,
                     s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado,
@@ -90,6 +94,7 @@ class FuncionalidadModel {
                     s.peso_facturacion_potencial, s.peso_impacto_cliente,
                     s.peso_esfuerzo, s.peso_incertidumbre, s.peso_riesgo
                 FROM v_funcionalidades_completas v
+                LEFT JOIN funcionalidades f ON v.redmine_id = f.redmine_id
                 LEFT JOIN score s ON v.redmine_id = s.funcionalidad_id
                 WHERE v.redmine_id = $1
             `;
@@ -97,6 +102,35 @@ class FuncionalidadModel {
             return result.rows[0] || null;
         } catch (error) {
             console.error('Error al obtener funcionalidad:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Crear nueva funcionalidad manualmente (sin redmine_id)
+     */
+    static async crearManual(datos) {
+        try {
+            const query = `
+                INSERT INTO funcionalidades (titulo, descripcion, seccion, monto, titulo_personalizado, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING *
+            `;
+            
+            // Si no se proporciona titulo_personalizado, usar el titulo como default
+            const tituloPersonalizado = datos.titulo_personalizado || datos.titulo || null;
+            
+            const result = await pool.query(query, [
+                datos.titulo,
+                datos.descripcion || null,
+                datos.seccion || null,
+                datos.monto || null,
+                tituloPersonalizado
+            ]);
+            
+            return result.rows[0];
+        } catch (error) {
+            console.error('Error al crear funcionalidad manual:', error);
             throw error;
         }
     }
@@ -113,8 +147,8 @@ class FuncionalidadModel {
                 return await this.actualizar(datos.redmine_id, datos);
             }
             
-            // Si no viene redmine_id, no se puede crear (debe venir de Redmine)
-            throw new Error('Las funcionalidades deben crearse desde la sincronización con Redmine');
+            // Si no viene redmine_id, crear manualmente
+            return await this.crearManual(datos);
         } catch (error) {
             console.error('Error al crear funcionalidad:', error);
             throw error;
@@ -132,14 +166,16 @@ class FuncionalidadModel {
                 SET descripcion = $1,
                     seccion = $2,
                     monto = $3,
+                    titulo_personalizado = $4,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE redmine_id = $4
+                WHERE redmine_id = $5
                 RETURNING *
             `;
             const values = [
                 datos.descripcion || null,
                 datos.seccion || null,
                 datos.monto ? parseFloat(datos.monto) : null,
+                datos.titulo_personalizado || null,
                 redmine_id
             ];
             const result = await pool.query(query, values);

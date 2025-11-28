@@ -273,7 +273,7 @@ class ScoreBacklogModel {
                     s.esfuerzo,
                     s.incertidumbre,
                     s.riesgo
-                FROM v_backlog_proyectos_completos v
+                FROM v_proyectos_internos_completos v
                 LEFT JOIN score_backlog s ON v.redmine_id = s.funcionalidad_id
                 WHERE s.score_calculado IS NOT NULL
                 ORDER BY s.score_calculado DESC

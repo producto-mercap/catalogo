@@ -185,32 +185,12 @@ function extraerCustomField(customFields, fieldKey) {
 }
 
 /**
- * Parsear sponsor: extraer solo la parte antes del "|"
- * Ejemplo: "UT Bancor | Mantenimiento" -> "Bancor"
- * @param {string} proyecto - Nombre completo del proyecto
- * @returns {string} - Sponsor parseado
- */
-function parsearSponsor(proyecto) {
-    if (!proyecto) return 'Sin proyecto';
-    
-    // Si contiene "|", tomar la parte antes del "|"
-    if (proyecto.includes('|')) {
-        const parte = proyecto.split('|')[0].trim();
-        // Remover "UT " si existe al inicio
-        return parte.replace(/^UT\s+/i, '').trim() || parte.trim();
-    }
-    
-    // Si no contiene "|", remover "UT " si existe
-    return proyecto.replace(/^UT\s+/i, '').trim() || proyecto.trim();
-}
-
-/**
  * Mapear issue de Redmine a formato SIMPLIFICADO (solo datos no editables)
  * @param {Object} issue - Issue de Redmine
  * @returns {Object} - Datos mapeados (solo lo esencial)
  */
 function mapearIssue(issue) {
-    const proyectoCompleto = issue.project?.name || 'Sin proyecto';
+    const proyectoCompleto = issue.project?.name || null;
     
     // Extraer custom fields
     const customFields = issue.custom_fields || [];
@@ -222,11 +202,43 @@ function mapearIssue(issue) {
         
         // Datos básicos de Redmine (no editables)
         titulo: issue.subject || 'Sin título',
-        proyecto: parsearSponsor(proyectoCompleto), // Sponsor parseado
-        proyecto_completo: proyectoCompleto, // Nombre completo del proyecto
+        descripcion: issue.description || null,
+        proyecto_completo: proyectoCompleto,
         fecha_creacion: issue.created_on || null,
-        fecha_real_finalizacion: fechaRealFinalizacion, // Custom field id 15
-        total_spent_hours: issue.total_spent_hours || null // Horas dedicadas
+        fecha_real_finalizacion: fechaRealFinalizacion,
+        total_spent_hours: issue.total_spent_hours || null
+    };
+}
+
+/**
+ * Mapear issue de Redmine para Proyectos Internos
+ * @param {Object} issue - Issue de Redmine
+ * @returns {Object} - Datos mapeados para proyectos internos
+ */
+function mapearIssueProyectosInternos(issue) {
+    const proyectoCompleto = issue.project?.name || null;
+    
+    // Extraer custom fields
+    const customFields = issue.custom_fields || [];
+    const fechaRealFinalizacion = customFields.find(cf => cf.id === 15)?.value || null;
+    // Services-ID desde custom field 23
+    const servicesId = customFields.find(cf => cf.id === 23)?.value || null;
+    
+    // Estado Redmine desde status.name
+    const estadoRedmine = issue.status?.name || null;
+    
+    return {
+        // ID del issue (único e inmutable)
+        redmine_id: issue.id,
+        
+        // Datos básicos de Redmine (no editables)
+        titulo: issue.subject || 'Sin título',
+        proyecto_completo: proyectoCompleto,
+        fecha_creacion: issue.created_on || null,
+        fecha_real_finalizacion: fechaRealFinalizacion,
+        total_spent_hours: issue.total_spent_hours || null,
+        services_id: servicesId, // Custom field 23 (Services-ID)
+        estado_redmine: estadoRedmine // Status.name
     };
 }
 
@@ -387,6 +399,115 @@ async function obtenerIssuesMapeados(project_id = null, tracker_id = null, maxTo
         console.error('❌ Error al mapear issues:', error.message);
         throw error;
     }
+}
+
+/**
+ * Obtener issues a partir de IDs específicos
+ * @param {Array<string|number>} issueIds - Lista de IDs de Redmine
+ * @param {string|null} tracker_id - Tracker opcional
+ * @param {number|null} limit - Límite de resultados
+ */
+async function obtenerIssuesPorIds(issueIds = [], tracker_id = null, limit = 100) {
+    validarCredenciales();
+
+    const ids = Array.isArray(issueIds) ? issueIds.filter(Boolean) : [];
+    if (ids.length === 0) {
+        throw new Error('Debe proporcionar al menos un issue_id para sincronizar proyectos internos');
+    }
+
+    const limitSeguro = Math.min(limit || 100, 100);
+    const params = new URLSearchParams({
+        issue_id: ids.join(','),
+        limit: limitSeguro.toString(),
+        key: REDMINE_TOKEN
+    });
+
+    if (tracker_id) {
+        params.set('tracker_id', tracker_id);
+    }
+
+    const baseUrl = REDMINE_URL.replace(/\/+$/, '');
+    const url = `${baseUrl}/issues.json?${params.toString()}`;
+    const urlLog = url.replace(/key=[^&]+/, 'key=***');
+    console.log(`🔍 Consultando Redmine por issue_id: ${urlLog}`);
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Catalogo-NodeJS/1.0'
+        }
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error HTTP en issues por ID:', response.status);
+        console.error('📄 Respuesta:', errorText.substring(0, 500));
+        throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const issues = data.issues || [];
+    console.log(`✅ Issues obtenidos por ID: ${issues.length}`);
+    return issues.map(mapearIssue);
+}
+
+/**
+ * Obtener issues filtrando por proyecto y custom field (Proyectos Internos)
+ * @param {Object} options
+ * @param {string} options.project_id - ID o identifier del proyecto (default ut-mercap)
+ * @param {string} options.tracker_id - Tracker ID (default 19)
+ * @param {string} options.cf_23 - Valor del custom field 23 (default *)
+ * @param {number} options.limit - Límite (max 100)
+ * @param {string} options.status_id - Estado (default *)
+ */
+async function obtenerIssuesProyectosInternos(options = {}) {
+    validarCredenciales();
+
+    const projectId = options.project_id || process.env.REDMINE_INTERNAL_PROJECT || 'ut-mercap';
+    const trackerId = options.tracker_id || process.env.REDMINE_INTERNAL_TRACKER || process.env.REDMINE_DEFAULT_TRACKER || '19';
+    const cf23 = typeof options.cf_23 !== 'undefined' ? options.cf_23 : (process.env.REDMINE_INTERNAL_CF23 || '*');
+    const limit = Math.min(options.limit || 100, 100);
+    const statusId = options.status_id || '*';
+
+    const params = new URLSearchParams({
+        project_id: projectId,
+        tracker_id: trackerId,
+        status_id: statusId,
+        limit: limit.toString(),
+        key: REDMINE_TOKEN
+    });
+
+    if (cf23 !== null && typeof cf23 !== 'undefined') {
+        params.set('cf_23', cf23);
+    }
+
+    const baseUrl = REDMINE_URL.replace(/\/+$/, '');
+    const url = `${baseUrl}/issues.json?${params.toString()}`;
+    const urlLog = url.replace(/key=[^&]+/, 'key=***');
+    console.log(`🔍 Consultando Redmine (proyectos internos): ${urlLog}`);
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Catalogo-NodeJS/1.0'
+        }
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error HTTP en proyectos internos:', response.status);
+        console.error('📄 Respuesta:', errorText.substring(0, 500));
+        throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const issues = data.issues || [];
+    console.log(`✅ Issues obtenidos (proyectos internos): ${issues.length}`);
+    return issues.map(mapearIssueProyectosInternos);
 }
 
 /**
@@ -697,11 +818,14 @@ module.exports = {
     obtenerIssues,
     obtenerTodosLosIssues,
     obtenerIssuesMapeados,
+    obtenerIssuesPorIds,
+    obtenerIssuesProyectosInternos,
     obtenerProjectIdPorNombre,
     obtenerIssuesPorNombreProyecto,
     obtenerIssuesMapeadosPorNombreProyecto,
     listarProyectos,
     mapearIssue,
+    mapearIssueProyectosInternos,
     probarConexion,
     obtenerProyectos,
     obtenerProyectosMapeados,

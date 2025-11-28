@@ -11,7 +11,7 @@
     <header class="top-header">
         <div style="display: flex; align-items: center; gap: 12px;">
             <img src="/images/logo.png" alt="Logo" style="height: 28px; width: auto; display: block;" onerror="this.style.display='none';" />
-            <span onclick="window.location.href='/funcionalidades'" style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">Catálogo</span>
+            <span onclick="window.location.href='/funcionalidades'" style="font-size: 16px; font-weight: 500; color: var(--text-secondary); font-family: 'Google Sans', 'Roboto', sans-serif; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-secondary)'">Catálogo Unitrade</span>
         </div>
     </header>
     
@@ -22,6 +22,14 @@
             <!-- Toolbar -->
             <div class="toolbar">
                 <div class="toolbar-left" style="display: flex; align-items: center; gap: 8px;">
+                    <% if (isAdmin) { %>
+                        <button onclick="crearFuncionalidad()" class="button" style="margin-right: 12px;" title="Agregar funcionalidad">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            <span>Agregar</span>
+                        </button>
+                    <% } %>
                     <!-- Botones de filtro -->
                     <div style="position: relative; margin-right: 12px;">
                         <button class="filter-btn <%= (typeof filtros.secciones !== 'undefined' && filtros.secciones.length > 0) ? 'filter-btn-active' : '' %>" onclick="toggleFilterSecciones()" title="Filtrar por Sección">
@@ -110,8 +118,8 @@
                         </div>
                         
                         <!-- Botón de sincronización (solo admin puede usar) -->
-                        <button class="icon-button" onclick="<%= isAdmin ? 'sincronizarRedmine()' : 'alert(\'Solo administradores pueden sincronizar con Redmine\')' %>" title="<%= isAdmin ? 'Sincronizar con Redmine' : 'Solo administradores pueden sincronizar' %>" id="syncButton" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: none; background: <%= isAdmin ? '#316ba1' : '#9aa0a6' %>; cursor: <%= isAdmin ? 'pointer' : 'not-allowed' %>; transition: all 0.2s; flex-shrink: 0;<%= isAdmin ? '' : ' opacity: 0.5;' %>" onmouseover="<%= isAdmin ? 'this.style.background=\'#2a5a8a\'' : '' %>" onmouseout="<%= isAdmin ? 'this.style.background=\'#316ba1\'' : '' %>">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: white;">
+                        <button onclick="<%= isAdmin ? 'sincronizarRedmine()' : 'alert(\'Solo administradores pueden sincronizar con Redmine\')' %>" title="<%= isAdmin ? 'Sincronizar con Redmine' : 'Solo administradores pueden sincronizar' %>" id="syncButton" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #dfe1e5; background: <%= isAdmin ? 'white' : '#f1f3f4' %>; cursor: <%= isAdmin ? 'pointer' : 'not-allowed' %>; transition: all 0.2s; flex-shrink: 0;<%= isAdmin ? '' : ' opacity: 0.5;' %>" onmouseover="<%= isAdmin ? 'this.style.background=\'#f1f3f4\'' : '' %>" onmouseout="<%= isAdmin ? 'this.style.background=\'white\'' : '' %>">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: #5f6368;">
                                 <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.81 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
                             </svg>
                         </button>
@@ -225,11 +233,8 @@
                         <% funcionalidades.forEach(func => { %>
                             <div class="list-item" onclick='verDetalle(<%- JSON.stringify(func.redmine_id || func.id) %>)'>
                                 <div class="item-title">
-                                    <div class="item-icon">
-                                        <%= (func.titulo || '?').substring(0, 1).toUpperCase() %>
-                                    </div>
                                     <div>
-                                        <div><%= func.titulo || 'Sin título' %></div>
+                                        <div><%= func.titulo_personalizado || func.titulo || 'Sin título' %></div>
                                         <% if (func.descripcion) { %>
                                             <div class="text-small text-muted text-truncate" style="max-width: 400px;">
                                                 <%= func.descripcion %>
@@ -276,7 +281,7 @@
                         <% funcionalidades.forEach(func => { %>
                             <div class="card" onclick='verDetalle(<%- JSON.stringify(func.redmine_id || func.id) %>)'>
                                 <div class="card-header">
-                                    <h3 class="card-title"><%= func.titulo || 'Sin título' %></h3>
+                                    <h3 class="card-title"><%= func.titulo_personalizado || func.titulo || 'Sin título' %></h3>
                                     <button class="card-menu" onclick='event.stopPropagation(); eliminarFuncionalidad(<%- JSON.stringify(func.redmine_id || func.id) %>)'>
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
@@ -375,6 +380,41 @@
             const params = new URLSearchParams(window.location.search);
             params.set('busqueda', texto);
             window.location.search = params.toString();
+        }
+        
+        function crearFuncionalidad() {
+            const titulo = prompt('Ingrese el título de la funcionalidad:');
+            if (!titulo || !titulo.trim()) {
+                return;
+            }
+            
+            const descripcion = prompt('Ingrese la descripción (opcional):') || null;
+            const seccion = prompt('Ingrese la sección (opcional):') || null;
+            
+            fetch('/funcionalidades', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    titulo: titulo.trim(),
+                    descripcion: descripcion ? descripcion.trim() : null,
+                    seccion: seccion ? seccion.trim() : null
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Funcionalidad creada exitosamente');
+                    window.location.reload();
+                } else {
+                    alert('Error al crear funcionalidad: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al crear funcionalidad: ' + error.message);
+            });
         }
         
         // Cerrar sugerencias al hacer clic fuera

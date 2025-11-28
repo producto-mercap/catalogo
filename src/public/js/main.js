@@ -288,8 +288,8 @@ async function sincronizarRedmine() {
     }
 }
 
-// Sincronizar Backlog Proyectos con Redmine
-async function sincronizarBacklog() {
+// Sincronizar Proyectos Internos con Redmine
+async function sincronizarProyectosInternos() {
     const button = document.getElementById('syncButton');
     if (!button) return;
     
@@ -302,7 +302,7 @@ async function sincronizarBacklog() {
     mostrarPopupSincronizacion();
     
     try {
-        const response = await fetch('/api/redmine/sincronizar-backlog', {
+        const response = await fetch('/api/redmine/sincronizar-proyectos-internos', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

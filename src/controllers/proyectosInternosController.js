@@ -1,7 +1,12 @@
-const BacklogProyectosModel = require('../models/BacklogProyectosModel');
+const ProyectosInternosModel = require('../models/ProyectosInternosModel');
+
+const buildRedmineBaseUrl = () => {
+    const base = process.env.REDMINE_PUBLIC_URL || process.env.REDMINE_URL || 'https://redmine.mercap.net';
+    return base.replace(/\/+$/, '');
+};
 
 /**
- * Renderizar página de backlog de proyectos
+ * Renderizar página de proyectos internos
  */
 exports.index = async (req, res) => {
     try {
@@ -15,39 +20,40 @@ exports.index = async (req, res) => {
             direccion: req.query.direccion || 'desc'
         };
         
-        const vista = req.query.vista || 'lista'; // lista o tarjetas
+        const vista = req.query.vista || 'lista';
         
-        const proyectos = await BacklogProyectosModel.obtenerTodas(filtros);
-        const secciones = await BacklogProyectosModel.obtenerSecciones();
-        const estadisticas = await BacklogProyectosModel.obtenerEstadisticas();
+        const proyectos = await ProyectosInternosModel.obtenerTodas(filtros);
+        const secciones = await ProyectosInternosModel.obtenerSecciones();
+        const estadisticas = await ProyectosInternosModel.obtenerEstadisticas();
         
         res.render('pages/backlog-proyectos', {
-            title: 'Backlog Proyectos',
+            title: 'Proyectos Internos',
             proyectos,
             secciones,
             estadisticas,
             filtros,
             vista,
-            activeMenu: 'backlog-proyectos',
-            isAdmin: req.isAdmin || false
+            activeMenu: 'proyectos-internos',
+            isAdmin: req.isAdmin || false,
+            redmineBaseUrl: buildRedmineBaseUrl()
         });
     } catch (error) {
-        console.error('Error al cargar backlog de proyectos:', error);
+        console.error('Error al cargar proyectos internos:', error);
         res.status(500).render('pages/error', {
             title: 'Error',
-            message: 'Error al cargar el backlog de proyectos'
+            message: 'Error al cargar los proyectos internos'
         });
     }
 };
 
 /**
- * Renderizar detalle de proyecto
+ * Renderizar detalle de proyecto interno
  * @param {number} redmine_id - ID del issue en Redmine
  */
 exports.detalle = async (req, res) => {
     try {
-        const { id } = req.params; // Este es el redmine_id ahora
-        const proyecto = await BacklogProyectosModel.obtenerPorId(id);
+        const { id } = req.params;
+        const proyecto = await ProyectosInternosModel.obtenerPorId(id);
         
         if (!proyecto) {
             return res.status(404).render('pages/404', {
@@ -58,8 +64,9 @@ exports.detalle = async (req, res) => {
         res.render('pages/backlog-proyecto-detalle', {
             title: proyecto.titulo,
             proyecto,
-            activeMenu: 'backlog-proyectos',
-            isAdmin: req.isAdmin || false
+            activeMenu: 'proyectos-internos',
+            isAdmin: req.isAdmin || false,
+            redmineBaseUrl: buildRedmineBaseUrl()
         });
     } catch (error) {
         console.error('Error al cargar detalle:', error);
@@ -71,12 +78,10 @@ exports.detalle = async (req, res) => {
 };
 
 /**
- * Renderizar formulario de nuevo proyecto
- * NOTA: Los proyectos se crean automáticamente desde la sincronización con Redmine
- * Redirigir a la lista de proyectos
+ * Redirigir a la lista (los proyectos se crean desde Redmine)
  */
 exports.nuevoFormulario = async (req, res) => {
-    res.redirect('/backlog-proyectos');
+    res.redirect('/proyectos-internos');
 };
 
 /**
@@ -85,8 +90,8 @@ exports.nuevoFormulario = async (req, res) => {
  */
 exports.editarFormulario = async (req, res) => {
     try {
-        const { id } = req.params; // Este es el redmine_id ahora
-        const proyecto = await BacklogProyectosModel.obtenerPorId(id);
+        const { id } = req.params;
+        const proyecto = await ProyectosInternosModel.obtenerPorId(id);
         
         if (!proyecto) {
             return res.status(404).render('pages/404', {
@@ -94,13 +99,13 @@ exports.editarFormulario = async (req, res) => {
             });
         }
         
-        const secciones = await BacklogProyectosModel.obtenerSecciones();
+        const secciones = await ProyectosInternosModel.obtenerSecciones();
         
         res.render('pages/backlog-proyecto-form', {
-            title: 'Editar Proyecto',
+            title: 'Editar Proyecto Interno',
             proyecto,
             secciones,
-            activeMenu: 'backlog-proyectos'
+            activeMenu: 'proyectos-internos'
         });
     } catch (error) {
         console.error('Error al cargar formulario:', error);
@@ -112,9 +117,7 @@ exports.editarFormulario = async (req, res) => {
 };
 
 /**
- * Crear proyecto
- * NOTA: Los proyectos se crean automáticamente desde la sincronización con Redmine
- * Este endpoint solo actualiza campos editables si viene redmine_id
+ * Crear proyecto (en realidad actualiza si existe redmine_id)
  */
 exports.crear = async (req, res) => {
     try {
@@ -125,13 +128,12 @@ exports.crear = async (req, res) => {
             });
         }
         
-        // Si viene redmine_id, actualizar campos editables
         const datos = {
             descripcion: req.body.descripcion,
             seccion: req.body.seccion
         };
         
-        const proyecto = await BacklogProyectosModel.actualizar(req.body.redmine_id, datos);
+        const proyecto = await ProyectosInternosModel.actualizar(req.body.redmine_id, datos);
         
         if (!proyecto) {
             return res.status(404).json({
@@ -143,13 +145,13 @@ exports.crear = async (req, res) => {
         res.json({
             success: true,
             proyecto,
-            message: 'Proyecto actualizado exitosamente'
+            message: 'Proyecto interno actualizado exitosamente'
         });
     } catch (error) {
-        console.error('Error al crear proyecto:', error);
+        console.error('Error al crear proyecto interno:', error);
         res.status(500).json({
             success: false,
-            error: error.message || 'Error al crear el proyecto'
+            error: error.message || 'Error al crear el proyecto interno'
         });
     }
 };
@@ -160,13 +162,13 @@ exports.crear = async (req, res) => {
  */
 exports.actualizar = async (req, res) => {
     try {
-        const { id } = req.params; // Este es el redmine_id ahora
+        const { id } = req.params;
         const datos = {
             descripcion: req.body.descripcion,
             seccion: req.body.seccion
         };
         
-        const proyecto = await BacklogProyectosModel.actualizar(id, datos);
+        const proyecto = await ProyectosInternosModel.actualizar(id, datos);
         
         if (!proyecto) {
             return res.status(404).json({
@@ -178,25 +180,25 @@ exports.actualizar = async (req, res) => {
         res.json({
             success: true,
             proyecto,
-            message: 'Proyecto actualizado exitosamente'
+            message: 'Proyecto interno actualizado exitosamente'
         });
     } catch (error) {
-        console.error('Error al actualizar proyecto:', error);
+        console.error('Error al actualizar proyecto interno:', error);
         res.status(500).json({
             success: false,
-            error: 'Error al actualizar el proyecto'
+            error: 'Error al actualizar el proyecto interno'
         });
     }
 };
 
 /**
- * Eliminar proyecto
+ * Eliminar proyecto interno
  * @param {number} redmine_id - ID del issue en Redmine
  */
 exports.eliminar = async (req, res) => {
     try {
-        const { id } = req.params; // Este es el redmine_id ahora
-        const proyecto = await BacklogProyectosModel.eliminar(id);
+        const { id } = req.params;
+        const proyecto = await ProyectosInternosModel.eliminar(id);
         
         if (!proyecto) {
             return res.status(404).json({
@@ -207,13 +209,13 @@ exports.eliminar = async (req, res) => {
         
         res.json({
             success: true,
-            message: 'Proyecto eliminado exitosamente'
+            message: 'Proyecto interno eliminado exitosamente'
         });
     } catch (error) {
-        console.error('Error al eliminar proyecto:', error);
+        console.error('Error al eliminar proyecto interno:', error);
         res.status(500).json({
             success: false,
-            error: 'Error al eliminar el proyecto'
+            error: 'Error al eliminar el proyecto interno'
         });
     }
 };

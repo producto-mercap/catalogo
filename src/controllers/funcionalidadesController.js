@@ -63,7 +63,7 @@ exports.detalle = async (req, res) => {
         const todosLosClientes = await MapaModel.obtenerTodosLosClientes();
         
         res.render('pages/funcionalidad-detalle', {
-            title: funcionalidad.titulo,
+            title: funcionalidad.titulo_personalizado || funcionalidad.titulo || 'Funcionalidad',
             funcionalidad,
             clientesFuncionalidad,
             todosLosClientes,
@@ -122,38 +122,55 @@ exports.editarFormulario = async (req, res) => {
 
 /**
  * Crear funcionalidad
- * NOTA: Las funcionalidades se crean automáticamente desde la sincronización con Redmine
- * Este endpoint solo actualiza campos editables si viene redmine_id
+ * Permite crear funcionalidades manualmente (sin redmine_id) o actualizar si viene redmine_id
  */
 exports.crear = async (req, res) => {
     try {
-        if (!req.body.redmine_id) {
-            return res.status(400).json({
-                success: false,
-                error: 'Las funcionalidades deben crearse desde la sincronización con Redmine. Use el endpoint de actualización para editar campos.'
+        // Si viene redmine_id, actualizar campos editables
+        if (req.body.redmine_id) {
+            const datos = {
+                descripcion: req.body.descripcion,
+                seccion: req.body.seccion,
+                monto: req.body.monto ? parseFloat(req.body.monto) : null
+            };
+            
+            const funcionalidad = await FuncionalidadModel.actualizar(req.body.redmine_id, datos);
+            
+            if (!funcionalidad) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Funcionalidad no encontrada. Asegúrate de que el issue esté sincronizado desde Redmine.'
+                });
+            }
+            
+            return res.json({
+                success: true,
+                funcionalidad,
+                message: 'Funcionalidad actualizada exitosamente'
             });
         }
         
-        // Si viene redmine_id, actualizar campos editables
+        // Crear funcionalidad manualmente (sin redmine_id)
         const datos = {
-            descripcion: req.body.descripcion,
-            seccion: req.body.seccion,
+            titulo: req.body.titulo || 'Nueva funcionalidad',
+            descripcion: req.body.descripcion || null,
+            seccion: req.body.seccion || null,
             monto: req.body.monto ? parseFloat(req.body.monto) : null
         };
         
-        const funcionalidad = await FuncionalidadModel.actualizar(req.body.redmine_id, datos);
-        
-        if (!funcionalidad) {
-            return res.status(404).json({
+        if (!datos.titulo) {
+            return res.status(400).json({
                 success: false,
-                error: 'Funcionalidad no encontrada. Asegúrate de que el issue esté sincronizado desde Redmine.'
+                error: 'El título es requerido'
             });
         }
+        
+        const funcionalidad = await FuncionalidadModel.crearManual(datos);
         
         res.json({
             success: true,
             funcionalidad,
-            message: 'Funcionalidad actualizada exitosamente'
+            message: 'Funcionalidad creada exitosamente'
         });
     } catch (error) {
         console.error('Error al crear funcionalidad:', error);
@@ -174,7 +191,8 @@ exports.actualizar = async (req, res) => {
         const datos = {
             descripcion: req.body.descripcion,
             seccion: req.body.seccion,
-            monto: req.body.monto ? parseFloat(req.body.monto) : null
+            monto: req.body.monto ? parseFloat(req.body.monto) : null,
+            titulo_personalizado: req.body.titulo_personalizado || null
         };
         
         const funcionalidad = await FuncionalidadModel.actualizar(id, datos);

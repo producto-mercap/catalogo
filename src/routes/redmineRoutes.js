@@ -78,21 +78,44 @@ router.post('/sincronizar', requireAdmin, async (req, res) => {
 
 /**
  * POST /api/redmine/sincronizar-backlog
- * Sincronizar issues de Backlog Proyectos desde Redmine
- * Busca issues del proyecto "UT Mercap | Proyecto Genérico"
+ * Alias para mantener compatibilidad (sincroniza proyectos internos)
  * ⚠️ Requiere permisos de administrador
  */
 router.post('/sincronizar-backlog', requireAdmin, async (req, res) => {
     try {
-        const { tracker_id = null, max_total = null } = req.body;
+        const { tracker_id = null, max_total = null, cf_23 = null } = req.body;
         
         // Convertir max_total a número si viene como string
         const maxTotal = max_total ? parseInt(max_total) : null;
+        const cf23Filter = typeof cf_23 === 'string' && cf_23.length > 0 ? cf_23 : null;
         
-        console.log(`\n🔄 Iniciando sincronización backlog: tracker=${tracker_id || 'todos'}, límite=${maxTotal || 'sin límite'}`);
+        console.log(`\n🔄 Iniciando sincronización proyectos internos (alias backlog): tracker=${tracker_id || 'todos'}, límite=${maxTotal || '100'}, cf_23=${cf23Filter || '*'}`);
         
-        const resultado = await sincronizacionService.sincronizarBacklogProyectos(tracker_id, maxTotal);
+        const resultado = await sincronizacionService.sincronizarProyectosInternos(tracker_id, maxTotal, cf23Filter);
         
+        res.json(resultado);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+/**
+ * POST /api/redmine/sincronizar-proyectos-internos
+ * Nueva ruta oficial para sincronizar proyectos internos
+ * ⚠️ Requiere permisos de administrador
+ */
+router.post('/sincronizar-proyectos-internos', requireAdmin, async (req, res) => {
+    try {
+        const { tracker_id = null, max_total = null, cf_23 = null } = req.body;
+        const maxTotal = max_total ? parseInt(max_total) : null;
+        const cf23Filter = typeof cf_23 === 'string' && cf_23.length > 0 ? cf_23 : null;
+        
+        console.log(`\n🔄 Iniciando sincronización proyectos internos: tracker=${tracker_id || 'todos'}, límite=${maxTotal || '100'}, cf_23=${cf23Filter || '*'}`);
+        
+        const resultado = await sincronizacionService.sincronizarProyectosInternos(tracker_id, maxTotal, cf23Filter);
         res.json(resultado);
     } catch (error) {
         res.status(500).json({
