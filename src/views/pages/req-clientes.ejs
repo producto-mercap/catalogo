@@ -209,21 +209,18 @@
                                 </div>
                                 <div class="item-text desktop-only">
                                     <% 
-                                    const estadoMostrar = requerimiento.estado_epic || requerimiento.estado_redmine || '-';
-                                    let estadoFinal = estadoMostrar;
-                                    if (estadoMostrar !== '-') {
-                                        const estadoLower = estadoMostrar.toLowerCase();
+                                    const estadoEpic = requerimiento.estado_epic || '';
+                                    if (estadoEpic) {
+                                        const estadoLower = estadoEpic.toLowerCase().trim();
                                         if (estadoLower === 'cerrado' || estadoLower === 'entregado') {
-                                            estadoFinal = 'Entregado';
+                                            %>Entregado<%
                                         } else if (estadoLower === 'abierto') {
-                                            estadoFinal = 'Abierto';
+                                            %>Abierto<%
                                         } else {
-                                            // Capitalizar primera letra para otros estados
-                                            estadoFinal = estadoMostrar.charAt(0).toUpperCase() + estadoMostrar.slice(1).toLowerCase();
+                                            %><%= estadoEpic.trim() %><%
                                         }
                                     }
                                     %>
-                                    <%= estadoFinal %>
                                 </div>
                                 <div class="item-text desktop-only">
                                     <% if (requerimiento.id_epic) { 

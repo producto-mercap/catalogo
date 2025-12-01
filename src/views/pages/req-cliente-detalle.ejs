@@ -201,18 +201,16 @@
                                     <% 
                                     const estadoEpic = requerimiento.estado_epic || '';
                                     let estadoEpicStyle = 'font-weight: 500;';
-                                    let estadoEpicTexto = estadoEpic || '-';
+                                    let estadoEpicTexto = '';
                                     
                                     if (estadoEpic) {
-                                        // Normalizar estados: cerrado y entregado -> Entregado, abierto -> Abierto
-                                        const estadoLower = estadoEpic.toLowerCase();
+                                        const estadoLower = estadoEpic.toLowerCase().trim();
                                         if (estadoLower === 'cerrado' || estadoLower === 'entregado') {
                                             estadoEpicTexto = 'Entregado';
                                         } else if (estadoLower === 'abierto') {
                                             estadoEpicTexto = 'Abierto';
                                         } else {
-                                            // Capitalizar primera letra para otros estados
-                                            estadoEpicTexto = estadoEpic.charAt(0).toUpperCase() + estadoEpic.slice(1).toLowerCase();
+                                            estadoEpicTexto = estadoEpic.trim();
                                         }
                                         
                                         estadoEpicStyle += ' color: var(--text-primary);';
