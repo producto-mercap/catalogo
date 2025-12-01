@@ -204,10 +204,21 @@
                                     let estadoEpicTexto = estadoEpic || '-';
                                     
                                     if (estadoEpic) {
+                                        // Normalizar estados: cerrado y entregado -> Entregado, abierto -> Abierto
+                                        const estadoLower = estadoEpic.toLowerCase();
+                                        if (estadoLower === 'cerrado' || estadoLower === 'entregado') {
+                                            estadoEpicTexto = 'Entregado';
+                                        } else if (estadoLower === 'abierto') {
+                                            estadoEpicTexto = 'Abierto';
+                                        } else {
+                                            // Capitalizar primera letra para otros estados
+                                            estadoEpicTexto = estadoEpic.charAt(0).toUpperCase() + estadoEpic.slice(1).toLowerCase();
+                                        }
+                                        
                                         estadoEpicStyle += ' color: var(--text-primary);';
-                                        if (estadoEpic.toLowerCase() === 'abierto') {
+                                        if (estadoLower === 'abierto') {
                                             estadoEpicStyle += ' background: rgba(251, 146, 60, 0.15); padding: 4px 12px; border-radius: 12px; display: inline-block;';
-                                        } else if (estadoEpic.toLowerCase() === 'cerrado' || estadoEpic.toLowerCase() === 'entregado') {
+                                        } else if (estadoLower === 'cerrado' || estadoLower === 'entregado') {
                                             estadoEpicStyle += ' background: rgba(34, 197, 94, 0.15); padding: 4px 12px; border-radius: 12px; display: inline-block;';
                                         }
                                     } else {

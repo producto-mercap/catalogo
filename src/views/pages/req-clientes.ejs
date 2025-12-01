@@ -208,7 +208,22 @@
                                     <%= (requerimiento.cf_91 === '1' || requerimiento.cf_91 === 1) ? 'Si' : (requerimiento.cf_91 === '0' || requerimiento.cf_91 === 0) ? 'No' : (requerimiento.cf_91 || '-') %>
                                 </div>
                                 <div class="item-text desktop-only">
-                                    <%= requerimiento.estado_epic || requerimiento.estado_redmine || '-' %>
+                                    <% 
+                                    const estadoMostrar = requerimiento.estado_epic || requerimiento.estado_redmine || '-';
+                                    let estadoFinal = estadoMostrar;
+                                    if (estadoMostrar !== '-') {
+                                        const estadoLower = estadoMostrar.toLowerCase();
+                                        if (estadoLower === 'cerrado' || estadoLower === 'entregado') {
+                                            estadoFinal = 'Entregado';
+                                        } else if (estadoLower === 'abierto') {
+                                            estadoFinal = 'Abierto';
+                                        } else {
+                                            // Capitalizar primera letra para otros estados
+                                            estadoFinal = estadoMostrar.charAt(0).toUpperCase() + estadoMostrar.slice(1).toLowerCase();
+                                        }
+                                    }
+                                    %>
+                                    <%= estadoFinal %>
                                 </div>
                                 <div class="item-text desktop-only">
                                     <% if (requerimiento.id_epic) { 
