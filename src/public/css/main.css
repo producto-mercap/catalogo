@@ -968,7 +968,8 @@ select.btn:focus {
     justify-content: flex-start;
     padding: 4px 8px;
     margin: 0;
-    color: rgba(76, 120, 164, 1);
+    color: rgb(60, 64, 67);
+    font-weight: 500;
 }
 
 /* Columna sección - ancho fijo, centrado (tercera columna) */
