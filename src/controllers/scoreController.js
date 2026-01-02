@@ -3,6 +3,7 @@ const ScoreBacklogModel = require('../models/ScoreBacklogModel');
 const ScoreIdeasModel = require('../models/ScoreIdeasModel');
 const FuncionalidadModel = require('../models/FuncionalidadModel');
 const ProyectosInternosModel = require('../models/ProyectosInternosModel');
+const ReqClientesModel = require('../models/ReqClientesModel');
 const IdeasMejorasModel = require('../models/IdeasMejorasModel');
 
 /**
@@ -49,11 +50,18 @@ exports.calculadora = async (req, res) => {
                 score = await ScoreBacklogModel.obtenerPorFuncionalidad(id);
                 tipo = 'proyectos-internos';
             } else {
-                // Si no es proyecto interno, intentar como idea/mejora
-                item = await IdeasMejorasModel.obtenerPorId(id);
+                // Si no es proyecto interno, intentar como requerimiento de cliente
+                item = await ReqClientesModel.obtenerPorId(id);
                 if (item) {
-                    score = await ScoreIdeasModel.obtenerPorIdea(id);
-                    tipo = 'ideas-mejoras';
+                    score = await ScoreBacklogModel.obtenerPorFuncionalidad(id);
+                    tipo = 'req-clientes';
+                } else {
+                    // Si no es requerimiento de cliente, intentar como idea/mejora
+                    item = await IdeasMejorasModel.obtenerPorId(id);
+                    if (item) {
+                        score = await ScoreIdeasModel.obtenerPorIdea(id);
+                        tipo = 'ideas-mejoras';
+                    }
                 }
             }
         }
@@ -69,7 +77,7 @@ exports.calculadora = async (req, res) => {
             funcionalidad: item, // Mantener nombre para compatibilidad con la vista
             score,
             tipo,
-            activeMenu: tipo === 'proyectos-internos' ? 'proyectos-internos' : (tipo === 'ideas-mejoras' ? 'ideas-mejoras' : 'score')
+            activeMenu: tipo === 'proyectos-internos' ? 'proyectos-internos' : (tipo === 'req-clientes' ? 'req-clientes' : (tipo === 'ideas-mejoras' ? 'ideas-mejoras' : 'score'))
         });
     } catch (error) {
         console.error('Error al cargar calculadora:', error);
@@ -88,9 +96,10 @@ exports.actualizar = async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Determinar si es funcionalidad, proyecto interno o idea/mejora
+        // Determinar si es funcionalidad, proyecto interno, requerimiento de cliente o idea/mejora
         let funcionalidad = await FuncionalidadModel.obtenerPorId(id);
         let esProyectoInterno = false;
+        let esReqCliente = false;
         let esIdeaMejora = false;
         
         if (!funcionalidad) {
@@ -98,9 +107,14 @@ exports.actualizar = async (req, res) => {
             if (proyecto) {
                 esProyectoInterno = true;
             } else {
-                const idea = await IdeasMejorasModel.obtenerPorId(id);
-                if (idea) {
-                    esIdeaMejora = true;
+                const reqCliente = await ReqClientesModel.obtenerPorId(id);
+                if (reqCliente) {
+                    esReqCliente = true;
+                } else {
+                    const idea = await IdeasMejorasModel.obtenerPorId(id);
+                    if (idea) {
+                        esIdeaMejora = true;
+                    }
                 }
             }
         }
@@ -115,8 +129,8 @@ exports.actualizar = async (req, res) => {
             riesgo: parseInt(req.body.riesgo) || 0
         };
         
-        // Agregar origen para proyectos internos e ideas/mejoras
-        if (esProyectoInterno || esIdeaMejora) {
+        // Agregar origen para proyectos internos, requerimientos de clientes e ideas/mejoras
+        if (esProyectoInterno || esReqCliente || esIdeaMejora) {
             criterios.origen = parseInt(req.body.origen) || 0;
         }
         
@@ -137,7 +151,7 @@ exports.actualizar = async (req, res) => {
         
         if (funcionalidad) {
             score = await ScoreModel.actualizar(id, criterios);
-        } else if (esProyectoInterno) {
+        } else if (esProyectoInterno || esReqCliente) {
             score = await ScoreBacklogModel.actualizar(id, criterios);
         } else if (esIdeaMejora) {
             score = await ScoreIdeasModel.actualizar(id, criterios);

@@ -27,18 +27,67 @@ class ScoreBacklogModel {
             let scoreExistente = await this.obtenerPorFuncionalidad(funcionalidad_id);
             
             if (!scoreExistente) {
-                // Si no existe, primero crear el registro con pesos por defecto usando actualizarPesos
-                // Esto evita el error de overflow porque actualizarPesos maneja correctamente los tipos
-                await this.actualizarPesos(funcionalidad_id, {
-                    peso_facturacion: 40.00,
-                    peso_facturacion_potencial: 20.00,
-                    peso_impacto_cliente: 40.00,
-                    peso_esfuerzo: 40.00,
-                    peso_incertidumbre: 30.00,
-                    peso_riesgo: 30.00
-                });
-                // Ahora actualizar los criterios
-                scoreExistente = await this.obtenerPorFuncionalidad(funcionalidad_id);
+                // Verificar si es un requerimiento de cliente
+                const checkReqCliente = await pool.query(
+                    'SELECT redmine_id FROM req_clientes WHERE redmine_id = $1 UNION SELECT redmine_id FROM redmine_req_clientes WHERE redmine_id = $1',
+                    [funcionalidad_id]
+                );
+                
+                if (checkReqCliente.rows.length > 0) {
+                    // Es un requerimiento de cliente, pero score_backlog tiene foreign key a proyectos_internos
+                    // Intentar crear el registro directamente sin usar actualizarPesos para evitar el error de foreign key
+                    // Si falla, lanzar un error más claro
+                    try {
+                        const insertQuery = `
+                            INSERT INTO score_backlog (funcionalidad_id,
+                                origen, facturacion, facturacion_potencial, impacto_cliente,
+                                esfuerzo, incertidumbre, riesgo,
+                                peso_origen, peso_facturacion, peso_facturacion_potencial, peso_impacto_cliente,
+                                peso_esfuerzo, peso_incertidumbre, peso_riesgo)
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                            RETURNING *
+                        `;
+                        const insertValues = [
+                            funcionalidad_id,
+                            criterios.origen || 0,
+                            criterios.facturacion || 0,
+                            criterios.facturacion_potencial || 0,
+                            criterios.impacto_cliente || 0,
+                            criterios.esfuerzo || 0,
+                            criterios.incertidumbre || 0,
+                            criterios.riesgo || 0,
+                            40.00, // peso_origen
+                            40.00, // peso_facturacion
+                            20.00, // peso_facturacion_potencial
+                            40.00, // peso_impacto_cliente
+                            40.00, // peso_esfuerzo
+                            30.00, // peso_incertidumbre
+                            30.00  // peso_riesgo
+                        ];
+                        const insertResult = await pool.query(insertQuery, insertValues);
+                        scoreExistente = insertResult.rows[0];
+                } catch (insertError) {
+                    if (insertError.code === '23503') {
+                        // La foreign key constraint falla porque req_clientes no está en proyectos_internos
+                        // Necesitamos modificar la constraint de la BD para que acepte ambos
+                        console.error(`Error de foreign key al crear score para req_cliente ${funcionalidad_id}:`, insertError.message);
+                        throw new Error(`No se puede crear score para requerimiento de cliente ${funcionalidad_id}. La tabla score_backlog tiene una foreign key constraint que requiere que el ID exista en proyectos_internos. Se necesita modificar la constraint de la base de datos para permitir req_clientes también.`);
+                    }
+                    throw insertError;
+                }
+                } else {
+                    // Es un proyecto interno, usar el método normal
+                    await this.actualizarPesos(funcionalidad_id, {
+                        peso_facturacion: 40.00,
+                        peso_facturacion_potencial: 20.00,
+                        peso_impacto_cliente: 40.00,
+                        peso_esfuerzo: 40.00,
+                        peso_incertidumbre: 30.00,
+                        peso_riesgo: 30.00
+                    });
+                    // Ahora actualizar los criterios
+                    scoreExistente = await this.obtenerPorFuncionalidad(funcionalidad_id);
+                }
             }
             
             // Actualizar SOLO los criterios, NO los pesos (evita overflow)
@@ -85,26 +134,65 @@ class ScoreBacklogModel {
             let score = await this.obtenerPorFuncionalidad(funcionalidad_id);
             
             if (!score) {
+                // Verificar que el funcionalidad_id existe en proyectos_internos o req_clientes
+                // para evitar errores de foreign key constraint
+                const checkProyecto = await pool.query(
+                    'SELECT redmine_id FROM proyectos_internos WHERE redmine_id = $1',
+                    [funcionalidad_id]
+                );
+                const checkReqCliente = await pool.query(
+                    'SELECT redmine_id FROM req_clientes WHERE redmine_id = $1',
+                    [funcionalidad_id]
+                );
+                
+                if (checkProyecto.rows.length === 0 && checkReqCliente.rows.length === 0) {
+                    // Si no existe en ninguna tabla, verificar en redmine_*
+                    const checkRedmineProyecto = await pool.query(
+                        'SELECT redmine_id FROM redmine_proyectos_internos WHERE redmine_id = $1',
+                        [funcionalidad_id]
+                    );
+                    const checkRedmineReqCliente = await pool.query(
+                        'SELECT redmine_id FROM redmine_req_clientes WHERE redmine_id = $1',
+                        [funcionalidad_id]
+                    );
+                    
+                    if (checkRedmineProyecto.rows.length === 0 && checkRedmineReqCliente.rows.length === 0) {
+                        throw new Error(`El ID ${funcionalidad_id} no existe en proyectos_internos ni en req_clientes`);
+                    }
+                }
+                
                 // Crear score nuevo con valores por defecto y pesos correctos
-                const insertQuery = `
-                    INSERT INTO score_backlog (funcionalidad_id,
-                        peso_origen, peso_facturacion, peso_facturacion_potencial, peso_impacto_cliente,
-                        peso_esfuerzo, peso_incertidumbre, peso_riesgo)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                    RETURNING *
-                `;
-                const insertValues = [
-                    funcionalidad_id,
-                    40.00, // peso_origen
-                    40.00, // peso_facturacion
-                    20.00, // peso_facturacion_potencial
-                    40.00, // peso_impacto_cliente
-                    40.00, // peso_esfuerzo
-                    30.00, // peso_incertidumbre
-                    30.00  // peso_riesgo
-                ];
-                const insertResult = await pool.query(insertQuery, insertValues);
-                score = insertResult.rows[0];
+                // Si es req_cliente, la foreign key fallará, pero intentamos igual
+                // (puede que la constraint sea más flexible de lo que parece)
+                try {
+                    const insertQuery = `
+                        INSERT INTO score_backlog (funcionalidad_id,
+                            peso_origen, peso_facturacion, peso_facturacion_potencial, peso_impacto_cliente,
+                            peso_esfuerzo, peso_incertidumbre, peso_riesgo)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        RETURNING *
+                    `;
+                    const insertValues = [
+                        funcionalidad_id,
+                        40.00, // peso_origen
+                        40.00, // peso_facturacion
+                        20.00, // peso_facturacion_potencial
+                        40.00, // peso_impacto_cliente
+                        40.00, // peso_esfuerzo
+                        30.00, // peso_incertidumbre
+                        30.00  // peso_riesgo
+                    ];
+                    const insertResult = await pool.query(insertQuery, insertValues);
+                    score = insertResult.rows[0];
+                } catch (insertError) {
+                    // Si falla por foreign key, verificar si es porque es req_cliente
+                    if (insertError.code === '23503' && checkReqCliente.rows.length > 0) {
+                        // Para req_clientes, necesitamos crear primero el registro en proyectos_internos
+                        // o modificar la constraint. Por ahora, lanzamos un error más claro
+                        throw new Error(`No se puede crear score para requerimiento de cliente ${funcionalidad_id}. La foreign key constraint requiere que exista en proyectos_internos.`);
+                    }
+                    throw insertError;
+                }
             }
             
             // Actualizar pesos
