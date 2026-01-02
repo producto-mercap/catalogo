@@ -13,12 +13,14 @@ class ReqClientesModel {
                     r.estado_epic,
                     r.inicio_epic,
                     r.fin_epic,
+                    rc.oculto,
                     s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado,
                     COALESCE(s.score_calculado, 0) AS score_total
                 FROM v_req_clientes_completos v
                 LEFT JOIN redmine_req_clientes r ON v.redmine_id = r.redmine_id
+                LEFT JOIN req_clientes rc ON v.redmine_id = rc.redmine_id
                 LEFT JOIN score_backlog s ON v.redmine_id = s.funcionalidad_id
                 WHERE 1=1
             `;
@@ -27,27 +29,27 @@ class ReqClientesModel {
 
             // Filtrar por oculto: por defecto no mostrar ocultos, a menos que mostrarOcultos esté activado
             if (!filtros.mostrarOcultos) {
-                query += ` AND (COALESCE(v.oculto, FALSE) = FALSE)`;
+                query += ` AND (COALESCE(rc.oculto, FALSE) = FALSE)`;
             }
 
             if (filtros.busqueda) {
                 query += ` AND (
                     v.titulo ILIKE $${paramCount} OR 
                     v.descripcion ILIKE $${paramCount} OR 
-                    v.seccion ILIKE $${paramCount}
+                    rc.seccion ILIKE $${paramCount}
                 )`;
                 params.push(`%${filtros.busqueda}%`);
                 paramCount++;
             }
 
             if (filtros.seccion) {
-                query += ` AND v.seccion = $${paramCount}`;
+                query += ` AND rc.seccion = $${paramCount}`;
                 params.push(filtros.seccion);
                 paramCount++;
             }
             
             if (filtros.secciones && filtros.secciones.length > 0) {
-                query += ` AND v.seccion = ANY($${paramCount})`;
+                query += ` AND rc.seccion = ANY($${paramCount})`;
                 params.push(filtros.secciones);
                 paramCount++;
             }
@@ -55,8 +57,16 @@ class ReqClientesModel {
             const ordenValido = ['titulo', 'score_total', 'fecha_creacion', 'created_at', 'seccion'];
             const orden = ordenValido.includes(filtros.orden) ? filtros.orden : 'score_total';
             const direccion = filtros.direccion === 'asc' ? 'ASC' : 'DESC';
-            const ordenColumn = orden === 'score_total' ? orden : `v.${orden}`;
-            query += ` ORDER BY ${ordenColumn} ${direccion} NULLS LAST`;
+            
+            if (orden === 'score_total') {
+                query += ` ORDER BY COALESCE(s.score_calculado, 0) ${direccion}`;
+            } else if (orden === 'seccion') {
+                query += ` ORDER BY rc.seccion ${direccion} NULLS LAST`;
+            } else if (orden === 'created_at') {
+                query += ` ORDER BY COALESCE(rc.created_at, v.fecha_creacion) ${direccion} NULLS LAST`;
+            } else {
+                query += ` ORDER BY v.${orden} ${direccion} NULLS LAST`;
+            }
 
             const result = await pool.query(query, params);
             return result.rows;
@@ -79,6 +89,7 @@ class ReqClientesModel {
                     r.estado_epic,
                     r.inicio_epic,
                     r.fin_epic,
+                    rc.oculto,
                     s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado,
@@ -87,6 +98,7 @@ class ReqClientesModel {
                     s.peso_esfuerzo, s.peso_incertidumbre, s.peso_riesgo
                 FROM v_req_clientes_completos v
                 LEFT JOIN redmine_req_clientes r ON v.redmine_id = r.redmine_id
+                LEFT JOIN req_clientes rc ON v.redmine_id = rc.redmine_id
                 LEFT JOIN score_backlog s ON v.redmine_id = s.funcionalidad_id
                 WHERE v.redmine_id = $1
             `;
@@ -193,8 +205,9 @@ class ReqClientesModel {
                 SELECT 
                     COUNT(*) as total_requerimientos,
                     AVG(COALESCE(s.score_calculado, 0)) as score_promedio,
-                    COUNT(DISTINCT v.seccion) as total_secciones
+                    COUNT(DISTINCT rc.seccion) as total_secciones
                 FROM v_req_clientes_completos v
+                LEFT JOIN req_clientes rc ON v.redmine_id = rc.redmine_id
                 LEFT JOIN score_backlog s ON v.redmine_id = s.funcionalidad_id
             `;
             const result = await pool.query(query);

@@ -10,11 +10,13 @@ class ProyectosInternosModel {
             let query = `
                 SELECT 
                     v.*,
+                    pi.seccion,
                     s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado,
                     COALESCE(s.score_calculado, 0) AS score_total
                 FROM v_proyectos_internos_completos v
+                LEFT JOIN proyectos_internos pi ON v.redmine_id = pi.redmine_id
                 LEFT JOIN score_backlog s ON v.redmine_id = s.funcionalidad_id
                 WHERE 1=1
             `;
@@ -25,20 +27,20 @@ class ProyectosInternosModel {
                 query += ` AND (
                     v.titulo ILIKE $${paramCount} OR 
                     v.descripcion ILIKE $${paramCount} OR 
-                    v.seccion ILIKE $${paramCount}
+                    pi.seccion ILIKE $${paramCount}
                 )`;
                 params.push(`%${filtros.busqueda}%`);
                 paramCount++;
             }
 
             if (filtros.seccion) {
-                query += ` AND v.seccion = $${paramCount}`;
+                query += ` AND pi.seccion = $${paramCount}`;
                 params.push(filtros.seccion);
                 paramCount++;
             }
             
             if (filtros.secciones && filtros.secciones.length > 0) {
-                query += ` AND v.seccion = ANY($${paramCount})`;
+                query += ` AND pi.seccion = ANY($${paramCount})`;
                 params.push(filtros.secciones);
                 paramCount++;
             }
@@ -46,8 +48,16 @@ class ProyectosInternosModel {
             const ordenValido = ['titulo', 'score_total', 'fecha_creacion', 'created_at', 'seccion'];
             const orden = ordenValido.includes(filtros.orden) ? filtros.orden : 'score_total';
             const direccion = filtros.direccion === 'asc' ? 'ASC' : 'DESC';
-            const ordenColumn = orden === 'score_total' ? orden : `v.${orden}`;
-            query += ` ORDER BY ${ordenColumn} ${direccion} NULLS LAST`;
+            
+            if (orden === 'score_total') {
+                query += ` ORDER BY COALESCE(s.score_calculado, 0) ${direccion}`;
+            } else if (orden === 'seccion') {
+                query += ` ORDER BY pi.seccion ${direccion} NULLS LAST`;
+            } else if (orden === 'created_at') {
+                query += ` ORDER BY COALESCE(pi.created_at, v.fecha_creacion) ${direccion} NULLS LAST`;
+            } else {
+                query += ` ORDER BY v.${orden} ${direccion} NULLS LAST`;
+            }
 
             const result = await pool.query(query, params);
             return result.rows;
@@ -66,6 +76,7 @@ class ProyectosInternosModel {
             const query = `
                 SELECT 
                     v.*,
+                    pi.seccion,
                     s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado,
@@ -73,6 +84,7 @@ class ProyectosInternosModel {
                     s.peso_facturacion_potencial, s.peso_impacto_cliente,
                     s.peso_esfuerzo, s.peso_incertidumbre, s.peso_riesgo
                 FROM v_proyectos_internos_completos v
+                LEFT JOIN proyectos_internos pi ON v.redmine_id = pi.redmine_id
                 LEFT JOIN score_backlog s ON v.redmine_id = s.funcionalidad_id
                 WHERE v.redmine_id = $1
             `;
@@ -179,8 +191,9 @@ class ProyectosInternosModel {
                 SELECT 
                     COUNT(*) as total_proyectos,
                     AVG(COALESCE(s.score_calculado, 0)) as score_promedio,
-                    COUNT(DISTINCT v.seccion) as total_secciones
+                    COUNT(DISTINCT pi.seccion) as total_secciones
                 FROM v_proyectos_internos_completos v
+                LEFT JOIN proyectos_internos pi ON v.redmine_id = pi.redmine_id
                 LEFT JOIN score_backlog s ON v.redmine_id = s.funcionalidad_id
             `;
             const result = await pool.query(query);
