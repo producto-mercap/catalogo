@@ -35,6 +35,9 @@ class MapaModel {
                 SELECT 
                     v.*, 
                     f.titulo_personalizado,
+                    f.seccion,
+                    f.descripcion,
+                    f.monto,
                     s.score_calculado 
                 FROM v_funcionalidades_completas v
                 LEFT JOIN funcionalidades f ON v.redmine_id = f.redmine_id

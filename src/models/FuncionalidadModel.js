@@ -11,6 +11,9 @@ class FuncionalidadModel {
                 SELECT 
                     v.*,
                     f.titulo_personalizado,
+                    f.seccion,
+                    f.descripcion,
+                    f.monto,
                     s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado
@@ -110,6 +113,9 @@ class FuncionalidadModel {
                 SELECT 
                     v.*,
                     f.titulo_personalizado,
+                    f.seccion,
+                    f.descripcion,
+                    f.monto,
                     s.origen, s.facturacion, s.facturacion_potencial,
                     s.impacto_cliente, s.esfuerzo, s.incertidumbre, s.riesgo,
                     s.score_calculado,
@@ -356,6 +362,9 @@ class FuncionalidadModel {
                 SELECT 
                     v.*,
                     f.titulo_personalizado,
+                    f.seccion,
+                    f.descripcion,
+                    f.monto,
                     s.score_calculado
                 FROM v_funcionalidades_completas v
                 LEFT JOIN funcionalidades f ON v.redmine_id = f.redmine_id
