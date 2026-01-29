@@ -55,12 +55,13 @@
                         </div>
                     </div>
                     
-                    <!-- Criterios -->
+                    <!-- Criterios (labels distintos para ideas/mejoras) -->
                     <div style="margin-bottom: 20px;">
                         <% 
+                        const esIdeasMejoras = (typeof tipo !== 'undefined' && tipo === 'ideas-mejoras');
                         const criterios = [
-                            { key: 'facturacion', label: 'Facturación', peso: score ? score.peso_facturacion : 40 },
-                            { key: 'facturacion_potencial', label: 'Facturación Potencial', peso: score ? score.peso_facturacion_potencial : 20 },
+                            { key: 'facturacion', label: esIdeasMejoras ? 'Optimizacion de Procesos' : 'Facturación', peso: score ? score.peso_facturacion : 40 },
+                            { key: 'facturacion_potencial', label: esIdeasMejoras ? 'Usabilidad' : 'Facturación Potencial', peso: score ? score.peso_facturacion_potencial : 20 },
                             { key: 'impacto_cliente', label: 'Impacto Negocio', peso: score ? score.peso_impacto_cliente : 40 },
                             { key: 'esfuerzo', label: 'Esfuerzo', peso: score ? score.peso_esfuerzo : 40 },
                             { key: 'incertidumbre', label: 'Incertidumbre', peso: score ? score.peso_incertidumbre : 30 },
