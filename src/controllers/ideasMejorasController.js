@@ -20,15 +20,21 @@ exports.index = async (req, res) => {
         const secciones = await IdeasMejorasModel.obtenerSecciones();
         const estadisticas = await IdeasMejorasModel.obtenerEstadisticas();
         
-        // Agregar secciones por defecto si no hay ninguna
-        const seccionesDisponibles = secciones.length > 0 ? secciones : [
+        // Agregar secciones por defecto si no hay ninguna (incluir siempre todas las opciones para filtro y formulario)
+        const seccionesBase = [
             'Operatorias',
             'Reportes e interfaces',
             'Backoffice',
             'Mercados',
             'Contabilidad',
-            'Valuacion'
+            'Valuacion',
+            'Otros',
+            'Performance',
+            'Visual'
         ];
+        const seccionesDisponibles = secciones.length > 0
+            ? [...new Set([...seccionesBase, ...secciones])].sort()
+            : seccionesBase;
         
         res.render('pages/ideas-mejoras', {
             title: 'Ideas/Mejoras',
