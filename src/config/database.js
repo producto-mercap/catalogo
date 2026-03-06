@@ -7,16 +7,32 @@ if (connectionString && !connectionString.includes('search_path=')) {
     connectionString = `${connectionString}${separator}search_path=public`;
 }
 
+function shouldUseSsl(connStr) {
+    if (!connStr) return false;
+    const lower = connStr.toLowerCase();
+    // Neon / managed PG suele exigir SSL vía sslmode=require
+    if (lower.includes('sslmode=require')) return true;
+    // Si apunta a localhost, en dev suele ser sin SSL
+    if (lower.includes('localhost') || lower.includes('127.0.0.1')) return false;
+    return process.env.NODE_ENV === 'production';
+}
+
+const ssl = shouldUseSsl(connectionString)
+    ? { rejectUnauthorized: false }
+    : undefined;
+
 // Configuración del pool de conexiones para PostgreSQL/Neon
 const pool = new Pool({
-    connectionString: connectionString,
-    ssl: {
-        rejectUnauthorized: false
-    },
+    connectionString,
+    ssl,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
 });
+
+if (!process.env.DATABASE_URL && process.env.NODE_ENV === 'development') {
+    console.warn('⚠️ DATABASE_URL no está configurada. Se intentará conectar a PostgreSQL local (localhost:5432) usando valores por defecto.');
+}
 
 // Manejo de errores del pool
 pool.on('error', (err) => {

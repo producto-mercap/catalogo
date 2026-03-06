@@ -91,27 +91,63 @@ class MapaModel {
      * @param {number} funcionalidadId - redmine_id de la funcionalidad
      */
     static async actualizarEstado(clienteId, funcionalidadId, datos) {
+        const client = await pool.connect();
         try {
-            const query = `
-                INSERT INTO cliente_funcionalidad 
-                (cliente_id, funcionalidad_id, estado_comercial)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (cliente_id, funcionalidad_id) 
-                DO UPDATE SET 
-                    estado_comercial = $3,
-                    updated_at = CURRENT_TIMESTAMP
-                RETURNING *
-            `;
-            const values = [
-                clienteId,
-                funcionalidadId, // redmine_id
-                datos.estado_comercial || null // null por defecto
-            ];
-            const result = await pool.query(query, values);
+            await client.query('BEGIN');
+
+            // Verificar si ya existe la relación
+            const existeResult = await client.query(
+                `
+                SELECT id, estado_comercial
+                FROM cliente_funcionalidad
+                WHERE cliente_id = $1 AND funcionalidad_id = $2
+                `,
+                [clienteId, funcionalidadId]
+            );
+
+            let result;
+
+            if (existeResult.rows.length === 0) {
+                // No existe: crear relación
+                result = await client.query(
+                    `
+                    INSERT INTO cliente_funcionalidad 
+                        (cliente_id, funcionalidad_id, estado_comercial)
+                    VALUES ($1, $2, $3)
+                    RETURNING *
+                    `,
+                    [
+                        clienteId,
+                        funcionalidadId,
+                        datos.estado_comercial || null
+                    ]
+                );
+            } else {
+                // Ya existe: actualizar solo estado_comercial y updated_at
+                result = await client.query(
+                    `
+                    UPDATE cliente_funcionalidad
+                    SET estado_comercial = $3,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE cliente_id = $1 AND funcionalidad_id = $2
+                    RETURNING *
+                    `,
+                    [
+                        clienteId,
+                        funcionalidadId,
+                        datos.estado_comercial || null
+                    ]
+                );
+            }
+
+            await client.query('COMMIT');
             return result.rows[0];
         } catch (error) {
+            await client.query('ROLLBACK');
             console.error('Error al actualizar estado:', error);
             throw error;
+        } finally {
+            client.release();
         }
     }
 

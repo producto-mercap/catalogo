@@ -736,18 +736,30 @@
                     body: JSON.stringify({ estado_comercial: estado })
                 });
                 
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Cerrar dropdown
-                    document.getElementById(`dropdown-estado-${clienteId}-${funcionalidadId}`).style.display = 'none';
-                    // Recargar página
-                    window.location.reload();
-                } else {
-                    console.error('Error:', data.error || 'Error desconocido');
+                let data = {};
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.error('No se pudo parsear la respuesta del servidor al actualizar estado:', parseError);
                 }
+                
+                if (!response.ok || !data.success) {
+                    const mensaje = (data && data.error) ? data.error : `Error HTTP ${response.status || ''} al actualizar el estado`;
+                    console.error('Error al actualizar estado:', mensaje);
+                    alert('No se pudo guardar el cambio de estado del cliente. Detalle: ' + mensaje);
+                    return;
+                }
+
+                // Cerrar dropdown
+                const dropdown = document.getElementById(`dropdown-estado-${clienteId}-${funcionalidadId}`);
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                }
+                // Recargar página para reflejar el cambio
+                window.location.reload();
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error al llamar al endpoint de actualización de estado:', error);
+                alert('Ocurrió un error al intentar guardar el cambio de estado del cliente.');
             }
         }
         
